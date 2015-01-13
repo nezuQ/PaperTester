@@ -32,11 +32,15 @@ EXCEL_SCREENSHOT_SHEETNAME = "Screenshot"
 
 'スクリーンショットを貼り付ける開始セル
 Dim EXCEL_STARTPRINT_CELLADDRESS
-EXCEL_STARTPRINT_CELLADDRESS = "C4"
+EXCEL_STARTPRINT_CELLADDRESS = "B3"
 
 'スクリーンショットを貼り付ける行間隔
 Dim EXCEL_ONEPAGE_ROWS
-EXCEL_ONEPAGE_ROWS = 61
+EXCEL_ONEPAGE_ROWS = 62
+
+'スクリーンショット用スクロールの縦幅調整値
+Dim SCROLL_ONEPAGE_ADDHEIGHT
+SCROLL_ONEPAGE_ADDHEIGHT = -100
 
 'データベースの値を貼り付けるEXCELシート
 Dim EXCEL_DATABASE_SHEETNAME
@@ -44,7 +48,7 @@ EXCEL_DATABASE_SHEETNAME = "Database"
 
 'データベースの値を貼り付ける開始セル
 Dim EXCEL_STARTSET_CELLADDRESS
-EXCEL_STARTSET_CELLADDRESS = "D4"
+EXCEL_STARTSET_CELLADDRESS = "B4"
 
 'データベースの値を貼り付ける行間隔
 Dim EXCEL_INTERVAL_ROWS
@@ -193,12 +197,17 @@ Function GetElement(expElm)
   Set GetElement = elmTgt
 End Function
 
+'表示部分のスクロール縦幅を取得する
+Function GetPageScrollHeight()
+  GetPageScrollHeight = ie.Height + SCROLL_ONEPAGE_ADDHEIGHT
+End Function
+
 'スクロールする
 Function Scroll(goToEnd)
   If (goToEnd) Then
     ie.Navigate "javascript:scroll(0," & ie.document.body.ScrollHeight & ")"
   Else
-    ie.Navigate "javascript:scrollTo(0," & ie.Height & ")"
+    ie.Navigate "javascript:scrollTo(0," & GetPageScrollHeight() & ")"
   End If
   Wscript.Sleep 1000
 End Function
@@ -224,7 +233,11 @@ End Sub
 'InternetExplorerを閉じる
 Sub Close()
   ie.Quit
-  Set ie = Nothing
+  If(0 < Ubound(ies)) Then
+    ActivateParentWindow
+  Else
+    Set ie = Nothing
+  End If
 End Sub
 
 '最大表示にする
@@ -261,7 +274,7 @@ End Sub
 '親画面をアクティブにする
 Sub ActivateParentWindow()
   Redim Preserve ies(Ubound(ies) - 1)
-  Redim Preserve idxIes(Ubound(ies) - 1)
+  Redim Preserve idxIes(Ubound(idxIes) - 1)
   Set ie = ies(Ubound(ies))
   ActivateWindow idxIes(Ubound(ies))
   IEWait(ie)
@@ -303,7 +316,7 @@ Sub SendKeys(key)
 End Sub
 
 'スクリーンショットを撮る（画面全体, 表示箇所のみ）
-Sub FullScreenShot4VisibleArea()
+Sub FullScreenShot4VisibleArea(msg)
   Call KeybdEvent(&H2C, 0, 1, 0)
   Call KeybdEvent(&H2C, 0, 3, 0)
   WScript.Sleep(2 * 1000)
@@ -311,37 +324,38 @@ Sub FullScreenShot4VisibleArea()
   Set rng = shtSS.Range( _
     EXCEL_STARTPRINT_CELLADDRESS _
       ).Offset(EXCEL_ONEPAGE_ROWS * idxPasteArea, 0)
-  rng.Select
+  rng.Value = msg
+  rng.Offset(1, 1).Select
   shtSS.Paste
   Set rng = Nothing
   idxPasteArea = idxPasteArea + 1
 End Sub
 
 'スクリーンショットを撮る（画面全体）
-Sub FullScreenShot()
-  FullScreenShot4VisibleArea
-  cntScroll = Ceil(ie.document.body.ScrollHeight / ie.Height)
+Sub FullScreenShot(msg)
+  FullScreenShot4VisibleArea msg
+  cntScroll = Ceil(ie.document.body.ScrollHeight / GetPageScrollHeight())
   Dim i
   For i = 2 To cntScroll
     Scroll (i = cntScroll)
-    FullScreenShot4VisibleArea
+    FullScreenShot4VisibleArea ""
   Next
 End Sub
 
 'スクリーンショットを撮る（アクティブ画面, 表示箇所のみ）
-Sub ScreenShot4VisibleArea()
+Sub ScreenShot4VisibleArea(msg)
   Call KeybdEvent(&H12, 0, 1, 0)
-  ScreenShot
+  FullScreenShot4VisibleArea msg
   Call KeybdEvent(&H12, 0, 3, 0)
 End Sub
 
 'スクリーンショットを撮る（アクティブ画面）
-Sub ScreenShot()
-  ScreenShot4VisibleArea
-  cntScroll = Ceil(ie.document.body.ScrollHeight / ie.Height)
+Sub ScreenShot(msg)
+  ScreenShot4VisibleArea msg
+  cntScroll = Ceil(ie.document.body.ScrollHeight / GetPageScrollHeight())
   For i = 2 To cntScroll
     Scroll (i = cntScroll)
-    ScreenShot4VisibleArea
+    ScreenShot4VisibleArea ""
   Next
 End Sub
 
@@ -349,20 +363,26 @@ End Sub
 Sub ExecuteSQL(sql)
   Dim rs, fld
   Set rs = CreateObject("ADODB.Recordset")
-  rs.Open sql, con, 1, 1
+  Dim cmd
+  cmd = Replace(sql, OPTIONROW_SEPERATE_KEYWORD, vbCrLf)
+  rs.Open cmd , con, 1, 1
   Dim cntClm
-  cntClm = 0
+  cntClm = 1
+  ' SQL文を記録
+  Set rng = shtDB.Range(EXCEL_STARTSET_CELLADDRESS)
+  rng.Offset(idxSetArea, 0).Value = cmd
+  idxSetArea = idxSetArea + 1
   ' 列名を記録
   For each fld in rs.Fields
-    shtDB.Range(EXCEL_STARTSET_CELLADDRESS).Offset(idxSetArea, cntClm).Value = fld.Name
+    rng.Offset(idxSetArea, cntClm).Value = fld.Name
     cntClm = cntClm + 1
   Next
   idxSetArea = idxSetArea + 1
   ' 値を記録
   Do Until rs.EOF
-    cntClm = 0
+    cntClm = 1
     For each fld in rs.Fields
-      shtDB.Range(EXCEL_STARTSET_CELLADDRESS).Offset(idxSetArea, cntClm).Value = fld.Value
+      rng.Offset(idxSetArea, cntClm).Value = fld.Value
       cntClm = cntClm + 1
     Next
     idxSetArea = idxSetArea + 1
@@ -370,6 +390,7 @@ Sub ExecuteSQL(sql)
   Loop
   idxSetArea = idxSetArea + EXCEL_INTERVAL_ROWS
   rs.Close
+  Set rng = Nothing
   Set fld = Nothing
   Set rs = Nothing
 End Sub
