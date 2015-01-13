@@ -22,26 +22,53 @@
 'THE SOFTWARE.
 
 '=====  設定  =====
-'スクリーンショットを貼り付けるEXCELブック
-Dim EXCEL_PRINT_BOOKPATH
-EXCEL_PRINT_BOOKPATH = ".\evidence.xlsx"
+'証跡記録用のEXCELブック
+Dim EXCEL_EVIDENCE_BOOKPATH
+EXCEL_EVIDENCE_BOOKPATH = ".\EvidenceTemplate.xlsx"
+
+'スクリーンショットを貼り付けるEXCELシート
+Dim EXCEL_SCREENSHOT_SHEETNAME
+EXCEL_SCREENSHOT_SHEETNAME = "Screenshot"
+
 'スクリーンショットを貼り付ける開始セル
 Dim EXCEL_STARTPRINT_CELLADDRESS
 EXCEL_STARTPRINT_CELLADDRESS = "C4"
+
 'スクリーンショットを貼り付ける行間隔
 Dim EXCEL_ONEPAGE_ROWS
 EXCEL_ONEPAGE_ROWS = 61
 
+'データベースの値を貼り付けるEXCELシート
+Dim EXCEL_DATABASE_SHEETNAME
+EXCEL_DATABASE_SHEETNAME = "Database"
+
+'データベースの値を貼り付ける開始セル
+Dim EXCEL_STARTSET_CELLADDRESS
+EXCEL_STARTSET_CELLADDRESS = "D4"
+
+'データベースの値を貼り付ける行間隔
+Dim EXCEL_INTERVAL_ROWS
+EXCEL_INTERVAL_ROWS = 2
+
+'接続文字列（任意）
+Dim fs
+Set fs = CreateObject("Scripting.FileSystemObject")
+Dim CONNECTION_STRING
+CONNECTION_STRING = "Provider=Microsoft.ACE.OLEDB.12.0; Data Source=" & fs.GetAbsolutePathName(".\_database.xlsx") & "; Extended Properties=""Excel 8.0;HDR=Yes; [IMEX=1;]"";"
+
 '=====  固定値  =====
 '引数行区切りのキーワード
 Dim OPTIONROW_SEPERATE_KEYWORD
-OPTIONROW_SEPERATE_KEYWORD = "|"
+OPTIONROW_SEPERATE_KEYWORD = " %|% "
+
 '引数区切りのキーワード
 Dim OPTION_SEPERATE_KEYWORD
-OPTION_SEPERATE_KEYWORD = ","
+OPTION_SEPERATE_KEYWORD = "←"
+
 '要素指定のキーワード
 Dim ELEMENT_SPECIFY_KEYWORD
 ELEMENT_SPECIFY_KEYWORD = "="
+
 'インデックス指定のキーワード
 Dim INDEX_SPECIFY_KEYWORD
 INDEX_SPECIFY_KEYWORD = "#"
@@ -52,20 +79,31 @@ Dim wsh
 Set wsh = WScript.CreateObject("WScript.Shell")
 Dim shl
 Set shl = CreateObject("Shell.Application")
-Dim fs
-Set fs = CreateObject("Scripting.FileSystemObject")
-Dim excel, wbk, sht, rng
+'Dim fs
+'Set fs = CreateObject("Scripting.FileSystemObject")
+Dim excel, wbk, shtSS, shtDB, rng
 Set excel = WScript.CreateObject("Excel.Application")
 excel.Application.Visible = True
 excel.Application.DisplayAlerts = False
-Set wbk = excel.Application.Workbooks.Open(fs.GetAbsolutePathName(EXCEL_PRINT_BOOKPATH))
-Set sht = excel.Worksheets(1)
+Set wbk = excel.Application.Workbooks.Open(fs.GetAbsolutePathName(EXCEL_EVIDENCE_BOOKPATH), 2, True)
+Set shtSS = excel.Worksheets(EXCEL_SCREENSHOT_SHEETNAME)
+Dim con
+If(CONNECTION_STRING <> "") Then
+  '接続文字列を指定した時
+  Set shtDB = excel.Worksheets(EXCEL_DATABASE_SHEETNAME)
+  Set con = CreateObject("ADODB.Connection")
+  con.Open CONNECTION_STRING
+End If
 
 Dim ies(), idxIes(), ie
 Redim ies(0)
+Set ies(0) = Nothing
 Redim idxIes(0)
-Dim doc
-Dim elm
+idxIes(0) = 0
+Set ie = Nothing
+Dim doc, elm
+Set doc = Nothing
+Set elm = Nothing
 
 Dim wLoc, wSvc, wEnu, wIns
 Set wLoc = CreateObject("WbemScripting.SWbemLocator")
@@ -75,6 +113,7 @@ Set wEnu = wSvc.InstancesOf("Win32_Process")
 Dim cntScroll, idxPasteArea
 cntScroll = 0
 idxPasteArea = 0
+idxSetArea = 0
 
 '===== 共通関数 =====
 'IEの遷移を待つ
@@ -108,16 +147,18 @@ End Function
 
 '入力する（SendKeys/Value共通）
 Sub Input(expOptsSet, useSendKeys)
-  Dim aryExpOpts, aryOpt, expOpts, expOpt
+  Dim aryExpOpts, aryOpt, expOpts, expOpt, idxSep, valInput
   aryExpOpts = Split(expOptsSet, OPTIONROW_SEPERATE_KEYWORD)
   For Each expOpts in aryExpOpts
-    aryOpt = Split(expOpts, OPTION_SEPERATE_KEYWORD)
-    Set elm = GetElement(aryOpt(0))
+    idxSep = InStr(expOpts, OPTION_SEPERATE_KEYWORD)
+    Set elm = GetElement(Left(expOpts, idxSep - 1))
     elm.Focus
+    valInput = Trim(Right(expOpts, Len(expOpts) - idxSep))
+    valInput = Mid(valInput, 2, Len(valInput) - 2)
     If (useSendKeys) Then
-      wsh.SendKeys aryOpt(1)
+      wsh.SendKeys valInput
     Else
-      elm.Value = aryOpt(1)
+      elm.Value = valInput
     End If
   Next
 End Sub
@@ -268,12 +309,12 @@ Sub FullScreenShot4VisibleArea()
   Call KeybdEvent(&H2C, 0, 1, 0)
   Call KeybdEvent(&H2C, 0, 3, 0)
   WScript.Sleep(2 * 1000)
-  sht.Activate
-  Set rng = sht.Range( _
+  shtSS.Activate
+  Set rng = shtSS.Range( _
     EXCEL_STARTPRINT_CELLADDRESS _
       ).Offset(EXCEL_ONEPAGE_ROWS * idxPasteArea, 0)
   rng.Select
-  sht.Paste
+  shtSS.Paste
   Set rng = Nothing
   idxPasteArea = idxPasteArea + 1
 End Sub
@@ -306,17 +347,48 @@ Sub ScreenShot()
   Next
 End Sub
 
+'SQL文を発行する
+Sub ExecuteSQL(sql)
+  Dim rs, fld
+  Set rs = CreateObject("ADODB.Recordset")
+  rs.Open sql, con, 1, 1
+  Dim cntClm
+  cntClm = 0
+  ' 列名を記録
+  For each fld in rs.Fields
+    shtDB.Range(EXCEL_STARTSET_CELLADDRESS).Offset(idxSetArea, cntClm).Value = fld.Name
+    cntClm = cntClm + 1
+  Next
+  idxSetArea = idxSetArea + 1
+  ' 値を記録
+  Do Until rs.EOF
+    cntClm = 0
+    For each fld in rs.Fields
+      shtDB.Range(EXCEL_STARTSET_CELLADDRESS).Offset(idxSetArea, cntClm).Value = fld.Value
+      cntClm = cntClm + 1
+    Next
+    idxSetArea = idxSetArea + 1
+    rs.MoveNext
+  Loop
+  idxSetArea = idxSetArea + EXCEL_INTERVAL_ROWS
+  rs.Close
+  Set fld = Nothing
+  Set rs = Nothing
+End Sub
+
 '===== 本処理 =====
-'【テスト仕様書で生成された操作コマンドをここに記入する。 】
+'【PaperTester.xlsxで生成されたVBScriptコマンドをここに貼り付ける。】
 Open
 Navigate "http://bl.ocks.org/nezuQ/raw/9719897/"
 FullScreenShot4VisibleArea
+ExecuteSQL "SELECT * FROM [Sheet1$] "
 
-ValueInput "id=ddlEndpoint,1|id=ddlSearchType,1|id=txtQuery,百合"
+ValueInput "id=ddlEndpoint ← '1' %|% id=ddlSearchType ← '1' %|% id=txtQuery ← '百合' %|% id=txtPHPSessID ← ''"
 FullScreenShot
 Click "tag=input#4"
 ActivateChildWindow
 FullScreenShot
+ExecuteSQL "SELECT * FROM [Sheet2$] "
 
 '===== 後処理 =====
 Set wLoc = Nothing
@@ -325,17 +397,19 @@ Set wSvc = Nothing
 Set wIns = Nothing
 Set elm = Nothing
 Set doc = Nothing
-Set sht = Nothing
-Set ie = Nothing
+If(Not(ie is Nothing)) Then
+  ie.FullScreen = False
+  Set ie = Nothing
+End If
 For i = LBound(ies) to UBound(ies)
-  ies(i).Quit
   Set ies(i) = Nothing
 Next
 Set rng = Nothing
-Set sht = Nothing
+Set shtSS = Nothing
 Set excel = Nothing
 Set wsh = Nothing
 Set shl = Nothing
 Set fs = Nothing
+Set con = Nothing
 
 Msgbox "処理が正常終了しました。"
