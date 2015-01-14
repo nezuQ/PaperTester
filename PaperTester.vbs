@@ -40,7 +40,7 @@ EXCEL_ONEPAGE_ROWS = 62
 
 'スクリーンショット用スクロールの縦幅調整値
 Dim SCROLL_ONEPAGE_ADDHEIGHT
-SCROLL_ONEPAGE_ADDHEIGHT = -100
+SCROLL_ONEPAGE_ADDHEIGHT = -150
 
 'データベースの値を貼り付けるEXCELシート
 Dim EXCEL_DATABASE_SHEETNAME
@@ -226,8 +226,8 @@ Sub Open()
   Set ies(0) = CreateObject("InternetExplorer.Application")
   Set ie = ies(0)
   ie.Visible = True
-  ie.FullScreen = True
   idxIes(0) = ActivateLastIE
+  MaximumWindow
 End Sub
 
 'InternetExplorerを閉じる
@@ -240,14 +240,29 @@ Sub Close()
   End If
 End Sub
 
-'最大表示にする
+'全画面表示を行う
 Sub FullScreen()
   ie.FullScreen = True
 End Sub
 
-'標準表示にする
+'全画面表示を止める
 Sub NormalScreen()
   ie.FullScreen = False
+End Sub
+
+'最大化する
+Sub MaximumWindow()
+  excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & ie.Hwnd & ", 3)"
+End Sub
+
+'最小化する
+Sub MinimumWindow()
+  excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & ie.Hwnd & ", 2)"
+End Sub
+
+'標準表示にする
+Sub NormalWindow()
+  excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & ie.Hwnd & ", 1)"
 End Sub
 
 '待機する
