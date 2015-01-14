@@ -334,9 +334,10 @@ End Sub
 
 'スクリーンショットを撮る（画面全体, 表示箇所のみ）
 Sub FullScreenShot4VisibleArea(msg)
+  WScript.Sleep(1000)
   Call KeybdEvent(&H2C, 0, 1, 0)
   Call KeybdEvent(&H2C, 0, 3, 0)
-  WScript.Sleep(2 * 1000)
+  WScript.Sleep(1000)
   shtSS.Activate
   Set rng = shtSS.Range( _
     EXCEL_STARTPRINT_CELLADDRESS _
