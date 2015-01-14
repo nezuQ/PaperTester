@@ -2,12 +2,13 @@ PaperTester
 ===========
 
 ##概要
+Windows標準機能のみ(VBA未使用)で作ったので、セキュアな開発環境でも導入できます。
 InternetExplorer(IE)の操作内容をExcel単体テスト仕様書（PaperTester.xlsx）に記入していくと、
 ワークシート関数で自動操作用のVBScriptコードを生成します。
 生成されたコードを所定のテンプレートコード（PaperTester.vbs）に埋め込み実行する事で、
 IEが自動操作され、
 スクリーンショットとSQL文の実行結果がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
-Windows標準機能のみで作ったので、セキュアな開発環境でも導入できます。
+
 
 ##デモ
 [demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、PaperTester.vbsをダブルクリックして下さい。
