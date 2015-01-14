@@ -6,10 +6,10 @@ InternetExplorer(IE)の操作内容をExcel単体テスト仕様書（PaperTeste
 ワークシート関数で自動操作用のVBScriptコードを生成します。
 生成されたコードを所定のテンプレートコード（PaperTester.vbs）に埋め込み実行する事で、
 IEが自動操作され、
-スクリーンショットとSQLスクリプトの実行結果がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
+スクリーンショットとSQL文の実行結果がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
 
 ##デモ
-[demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、ダブルクリックして下さい。
+[demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、PaperTester.vbsをダブルクリックして下さい。
 IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)の画面項目が自動操作されます。
 その後、スクリーンショットやダミーデータベース（_database.xlsx）の値がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
 
@@ -26,7 +26,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
    4. その他項目を任意で記入する。
  2. PaperTester.vbsへのコードの埋め込み方
    1. PaperTester.xlsxの操作コマンド列の値を一括でコピーし、PaperTester.vbsの"本処理"の箇所に貼り付ける。
-   2. 同ファイルの"設定"の箇所にある * CONNECTION_STRING * 変数に接続文字列を記入する。※データベースを操作しない場合は未記入にする。
+   2. 同ファイルの"設定"の箇所にある * CONNECTION_STRING * 変数に接続文字列を記入する。※SQL文を発行しない場合は未記入にする。
    3. 上書き保存する。
  3. テストの実行方法
    1. PaperTester.vbsをダブルクリックする。
