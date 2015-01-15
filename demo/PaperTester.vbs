@@ -1,25 +1,9 @@
+Option Explicit
+
 '=====  ライセンス  =====
-'The MIT License (MIT)
-'
 'Copyright (c) 2014 nezuq
-'
-'Permission is hereby granted, free of charge, to any person obtaining a copy
-'of this software and associated documentation files (the "Software"), to deal
-'in the Software without restriction, including without limitation the rights
-'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-'copies of the Software, and to permit persons to whom the Software is
-'furnished to do so, subject to the following conditions:
-'
-'The above copyright notice and this permission notice shall be included in
-'all copies or substantial portions of the Software.
-'
-'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-'THE SOFTWARE.
+'This software is released under the MIT License.
+'http://opensource.org/licenses/mit-license.php
 
 '=====  設定  =====
 '証跡記録用のEXCELブック
@@ -38,9 +22,9 @@ EXCEL_STARTPRINT_CELLADDRESS = "B3"
 Dim EXCEL_ONEPAGE_ROWS
 EXCEL_ONEPAGE_ROWS = 62
 
-'スクリーンショット用スクロールの縦幅調整値
-Dim SCROLL_ONEPAGE_ADDHEIGHT
-SCROLL_ONEPAGE_ADDHEIGHT = -150
+'IE全体におけるスクリーン高の比率
+Dim SCREEN_HEIGHTRATE
+SCREEN_HEIGHTRATE = 0.85
 
 'データベースの値を貼り付けるEXCELシート
 Dim EXCEL_DATABASE_SHEETNAME
@@ -67,7 +51,7 @@ OPTIONROW_SEPERATE_KEYWORD = " %|% "
 
 '引数区切りのキーワード
 Dim OPTION_SEPERATE_KEYWORD
-OPTION_SEPERATE_KEYWORD = "←"
+OPTION_SEPERATE_KEYWORD = "<-"
 
 '要素指定のキーワード
 Dim ELEMENT_SPECIFY_KEYWORD
@@ -114,8 +98,7 @@ Set wLoc = CreateObject("WbemScripting.SWbemLocator")
 Set wSvc = wLoc.ConnectServer
 Set wEnu = wSvc.InstancesOf("Win32_Process")
 
-Dim cntScroll, idxPasteArea
-cntScroll = 0
+Dim idxPasteArea, idxSetArea
 idxPasteArea = 0
 idxSetArea = 0
 
@@ -151,25 +134,38 @@ End Function
 
 '入力する（SendKeys/Value共通）
 Sub Input(expOptsSet, useSendKeys)
-  Dim aryExpOpts, aryOpt, expOpts, expOpt, idxSep, valInput
+  Dim aryExpOpts, aryOpt, expOpts, expOpt, idxSep, lenSep, valInput
   aryExpOpts = Split(expOptsSet, OPTIONROW_SEPERATE_KEYWORD)
   For Each expOpts in aryExpOpts
     idxSep = InStr(expOpts, OPTION_SEPERATE_KEYWORD)
+    lenSep = Len(OPTION_SEPERATE_KEYWORD)
     Set elm = GetElement(Left(expOpts, idxSep - 1))
     elm.Focus
-    valInput = Trim(Right(expOpts, Len(expOpts) - idxSep))
+    valInput = Trim(Right(expOpts, Len(expOpts) - idxSep - (lenSep - 1)))
     valInput = Mid(valInput, 2, Len(valInput) - 2)
-    If (useSendKeys) Then
-      wsh.SendKeys valInput
-    Else
-      elm.Value = valInput
-    End If
+    Select Case useSendKeys 
+      Case 0
+        elm.Value = valInput
+      Case 1
+        CopyText valInput
+        Wscript.Sleep 500
+        wsh.SendKeys "^(v)"
+      Case 2
+        wsh.SendKeys valInput
+    End Select
   Next
 End Sub
 
 '特殊キーを入力する
 Sub KeybdEvent(bVk, bScan, dwFlags, dwExtraInfo)
   Call excel.ExecuteExcel4Macro(Replace(Replace(Replace(Replace("CALL(""user32"",""keybd_event"",""JJJJJ"", %0, %1, %2, %3)", "%0", bVk), "%1", bScan), "%2", dwFlags), "%3", dwExtraInfo))
+End Sub
+
+'文字列をクリップボードに記録する
+Sub CopyText(str)
+  Dim cmd
+  cmd = "cmd /c ""echo " & str & "| clip"""
+  wsh.Run cmd, 0
 End Sub
 
 '要素を取得する
@@ -199,19 +195,16 @@ Function GetElement(expElm)
   Set GetElement = elmTgt
 End Function
 
-'表示部分のスクロール縦幅を取得する
-Function GetPageScrollHeight()
-  GetPageScrollHeight = ie.Height + SCROLL_ONEPAGE_ADDHEIGHT
-End Function
-
 'スクロールする
-Function Scroll(goToEnd)
-  If (goToEnd) Then
-    ie.Navigate "javascript:scroll(0," & ie.document.body.ScrollHeight & ")"
-  Else
-    ie.Navigate "javascript:scrollTo(0," & GetPageScrollHeight() & ")"
+Function Scroll(numHeight)
+  Dim numNextHeight
+  numNextHeight = numHeight
+  If (ie.document.body.ScrollHeight < numNextHeight) Then
+    numNextHeight = ie.document.body.ScrollHeight
   End If
+  ie.Navigate "javascript:scroll(0, " & numNextHeight & ")"
   Wscript.Sleep 1000
+  Scroll = numNextHeight
 End Function
 
 '数値を切り上げする
@@ -222,6 +215,37 @@ function Ceil(Number)
   end if
 end function
 
+'繰り返しスクリーンショットを撮る
+Sub RepeatScreenShot(isFull, msg)
+  '1枚目のスクリーンショットを撮る
+  If (isFull) Then
+    FullScreenShot4VisibleArea msg
+  Else
+    ScreenShot4VisibleArea msg
+  End If
+  '縦幅からスクリーンショット回数を算出する
+  Dim cntPage, numHeight, numPageHeight
+  numHeight = 0
+  numPageHeight = ie.Height * SCREEN_HEIGHTRATE
+  If (numPageHeight < ie.document.body.ScrollHeight) Then
+    cntPage = Ceil(ie.document.body.ScrollHeight / numPageHeight)
+  Else
+    cntPage = 1
+  End If
+  '2枚目以降のスクリーンショットを撮る
+  numHeight = numPageHeight
+  Dim i
+  For i = 2 To cntPage
+    Scroll (numHeight)
+    If (isFull) Then
+      FullScreenShot4VisibleArea ""
+    Else
+      ScreenShot4VisibleArea ""
+    End If
+    numHeight = numHeight + numPageHeight
+  Next
+End Sub
+
 '===== 操作用関数 =====
 'InternetExplorerを開く
 Sub Open()
@@ -229,17 +253,21 @@ Sub Open()
   Set ie = ies(0)
   ie.Visible = True
   idxIes(0) = ActivateLastIE
-  MaximumWindow
 End Sub
 
 'InternetExplorerを閉じる
 Sub Close()
   ie.Quit
-  If(0 < Ubound(ies)) Then
+  If (0 < Ubound(ies)) Then
     ActivateParentWindow
   Else
     Set ie = Nothing
   End If
+End Sub
+
+'戻る
+Sub GoBack()
+  ie.GoBack
 End Sub
 
 '全画面表示を行う
@@ -299,7 +327,7 @@ End Sub
 
 '指定フレームを活性にする
 Sub ActivateFrame(idxFrame)
-  Set doc = ie.document.frames(idxFrame)
+  Set doc = ie.document.frames(idxFrame).document
 End Sub
 
 'フォーカスを当てる
@@ -308,14 +336,19 @@ Sub Focus(expElm)
   elm.Focus
 End Sub
 
-'入力する（SendKeys）
-Sub KeyInput(expOptsSet)
-  Input expOptsSet, True
-End Sub
-
 '入力する（Value）
 Sub ValueInput(expOptsSet)
-  Input expOptsSet, False
+  Input expOptsSet, 0
+End Sub
+
+'入力する（Copy&Paste）
+Sub ValuePaste(expOptsSet)
+  Input expOptsSet, 1
+End Sub
+
+'入力する（SendKeys）
+Sub KeyInput(expOptsSet)
+  Input expOptsSet, 2
 End Sub
 
 'クリックする
@@ -323,6 +356,14 @@ Sub Click(expElm)
   Set elm = GetElement(expElm)
   elm.Focus
   elm.Click
+  IEWait(ie)
+End Sub
+
+'文字列をコピー&ペーストする。
+Sub CopyAndPaste(str)
+  CopyText str
+  Wscript.Sleep 500
+  wsh.SendKeys "^(v)", True
   IEWait(ie)
 End Sub
 
@@ -351,13 +392,7 @@ End Sub
 
 'スクリーンショットを撮る（画面全体）
 Sub FullScreenShot(msg)
-  FullScreenShot4VisibleArea msg
-  cntScroll = Ceil(ie.document.body.ScrollHeight / GetPageScrollHeight())
-  Dim i
-  For i = 2 To cntScroll
-    Scroll (i = cntScroll)
-    FullScreenShot4VisibleArea ""
-  Next
+  RepeatScreenShot True, msg
 End Sub
 
 'スクリーンショットを撮る（アクティブ画面, 表示箇所のみ）
@@ -369,12 +404,7 @@ End Sub
 
 'スクリーンショットを撮る（アクティブ画面）
 Sub ScreenShot(msg)
-  ScreenShot4VisibleArea msg
-  cntScroll = Ceil(ie.document.body.ScrollHeight / GetPageScrollHeight())
-  For i = 2 To cntScroll
-    Scroll (i = cntScroll)
-    ScreenShot4VisibleArea ""
-  Next
+  RepeatScreenShot False, msg
 End Sub
 
 'SQL文を発行する
@@ -417,17 +447,18 @@ End Sub
 '【PaperTester.xlsxで生成されたVBScriptコマンドをここに貼り付ける。】
 Open
 Navigate "http://bl.ocks.org/nezuQ/raw/9719897/"
+MaximumWindow
 FullScreenShot4VisibleArea "1"
 ExecuteSQL "SELECT * FROM [Sheet1$] "
 
-ValueInput "id=ddlEndpoint ← '1' %|% id=ddlSearchType ← '1' %|% id=txtQuery ← 'ラブライブ！' %|% id=txtPHPSessID ← ''"
+ValuePaste "id=txtQuery <- 'ラブライブ！ ' %|% id=txtPHPSessID <- '0'"
 FullScreenShot "2-1"
 Click "tag=input#4"
 ActivateChildWindow
 FullScreenShot ""
 ExecuteSQL "SELECT * FROM [Sheet2$] "
 Close
-ValueInput "id=ddlEndpoint ← '0' %|% id=ddlSearchType ← '0' %|% id=txtQuery ← '艦隊これくしょん' %|% id=txtPHPSessID ← ''"
+ValueInput "id=ddlEndpoint <- '0' %|% id=ddlSearchType <- '0' %|% id=txtQuery <- '艦隊これくしょん' %|% id=txtPHPSessID <- ''"
 FullScreenShot "2-2"
 Click "tag=input#4"
 ActivateChildWindow
@@ -441,7 +472,7 @@ Set wSvc = Nothing
 Set wIns = Nothing
 Set elm = Nothing
 Set doc = Nothing
-If(Not(ie is Nothing)) Then
+If (Not(ie is Nothing)) Then
   ie.FullScreen = False
   Set ie = Nothing
 End If
