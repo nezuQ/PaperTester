@@ -53,6 +53,7 @@ pt.VerticalScrollRate = 0.85
 pt.DatabaseSheetName = "Database"
 pt.DataPrintCellAddress = "B3"
 pt.DataIntervalRows = 2
+'※データベースへの接続文字列をここに記入する。
 pt.ConnectionString = ""
 
 pt.Initialize
