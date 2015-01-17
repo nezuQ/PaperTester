@@ -430,14 +430,12 @@ Class PaperTester
     CopyText str
     Wscript.Sleep 750
     wsh.SendKeys "^(v)", True
-    IEWait(ie)
     Wscript.Sleep 750
   End Sub
 
   'キーを押す
   Public Sub SendKeys(key)
     wsh.SendKeys key, True
-    IEWait(ie)
   End Sub
 
   'スクリーンショットを撮る（画面全体, 表示箇所のみ）

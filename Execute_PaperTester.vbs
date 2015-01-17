@@ -22,7 +22,7 @@ Private Function getEndMsg()
   hmsEnd = Now
   Dim secDiff, mntDiff
   secDiff = DateDiff("s", hmsStart, hmsEnd)
-  mntDiff = DateDiff("m", hmsStart, hmsEnd)
+  mntDiff = DateDiff("n", hmsStart, hmsEnd)
   getEndMsg = _
     "ŠJn“ú:" & FormatDateTime(hmsStart, 4) & _
       ", I—¹“ú:" & FormatDateTime(hmsEnd, 4) & _
