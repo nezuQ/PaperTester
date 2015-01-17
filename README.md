@@ -25,7 +25,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
    2. 確認内容・想定結果を記入する。
    3. 操作名・引数を記入する。入力できる値はdataシートに説明があります。
    4. その他項目を任意で記入する。
- 2. PaperTester.vbsへのコードの埋め込み方
+ 2. Execute_PaperTester.vbsへのコードの埋め込み方
    1. PaperTester.xlsxの操作コマンド列の値を一括でコピーし、Execute_PaperTester.vbsの"本処理"の箇所に貼り付ける。
    2. 同ファイルの"設定値"の箇所にある * pt.ConnectionString * に接続文字列を記入する。※SQL文を発行しない場合は未記入にする。
    3. 上書き保存する。
