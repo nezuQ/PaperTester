@@ -41,7 +41,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
  * クリップボードが空でない時、スクリーンショットが失敗する事がある。
 
 ##関連ページ
-Qiita - Excelスクショ問題の解決策を現役エンジニアが本気で考えた。
+Qiita - Excelスクショ問題の解決策を現役エンジニアが本気で考えた。  
 http://qiita.com/nezuq/items/d2ff540cdba00d41bfda  
 http://qiita.com/nezuq/items/8b9438108b5195a3c0bf  
 Qiita - Excel単体テスト仕様書からIE自動操作用のVBSコードを自動生成する。  
