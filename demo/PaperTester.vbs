@@ -302,7 +302,7 @@ Class PaperTester
         Case 0
           elm.Value = aryOpt(4)
         Case 1
-          CopyAndPaste aryOpt(4)
+          Paste aryOpt(4)
         Case 2
           wsh.SendKeys aryOpt(4)
       End Select
@@ -517,7 +517,7 @@ Class PaperTester
   End Sub
 
   '文字列をコピー&ペーストする。
-  Public Sub CopyAndPaste(str)
+  Public Sub Paste(str)
     CopyText str
     Wscript.Sleep 750
     wsh.SendKeys "^(v)", True
