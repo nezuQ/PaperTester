@@ -78,10 +78,10 @@ PasteInput "%0"
 KeyInput "%0"
  * クリックする  
 Click "%0"
- * 文字列をコピー&ペーストする  
-CopyAndPaste "%0"
  * キー入力する  
 SendKeys "%0"
+ * 文字列をペーストする  
+Paste "%0"
  * スクリーンショットを撮る（画面全体）  
 FullScreenShot "%0"
  * スクリーンショットを撮る（アクティブ画面のみ）  
