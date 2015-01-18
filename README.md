@@ -57,7 +57,7 @@ MinimumWindow
  * 画面を標準表示にする  
 NormalWindow
  * 待機する  
-Sleep(%0)
+Sleep %0 
  * URLで遷移する  
 Navigate "%0"
  * 子画面をアクティブにする  
