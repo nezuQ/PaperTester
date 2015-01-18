@@ -25,6 +25,9 @@ Class PaperTester
   'スクロール時の対画面での縦幅比
   Public VerticalScrollRate
 
+  '検証結果を貼り付けた後の行間隔
+  Public AfterValidationLogRows
+
   'データベースの値を貼り付けるEXCELシート
   Public DatabaseSheetName
 
@@ -43,13 +46,16 @@ Class PaperTester
   Public OptionRowSeperateKey
 
   '入力値指定のキーワード
-  Public SpecifyInputValueKey
+  Public SpecifyInputKey
 
-  '要素指定のキーワード
-  Public SpecifyElementKey
+  '属性指定のキーワード
+  Public SpecifyAttributeKey
 
   'インデックス指定のキーワード
   Public SpecifyIndexKey
+
+  'テキスト包括のキーワード
+  Public TextWrapKey
 
   '画面のアクティベーション処理の最大待機秒
   Public WindowActivationMaxWaitSeconds
@@ -64,7 +70,7 @@ Class PaperTester
   Private excel, wbk, shtSS, shtDB, rng
   Private con
   Private ies(), idxIes(), ie
-  Private doc, elm
+  Private doc
   Private wLoc, wSvc, wEnu, wIns
   Private idxPasteArea, idxSetArea
   
@@ -82,7 +88,6 @@ Class PaperTester
     idxIes(0) = 0
     Set ie = Nothing
     Set doc = Nothing
-    Set elm = Nothing
 
     Set wLoc = CreateObject("WbemScripting.SWbemLocator")
     Set wSvc = wLoc.ConnectServer
@@ -96,6 +101,7 @@ Class PaperTester
     ScreenshotSheetName = "Sheet1"
     ScreenshotPrintCellAddress = "A1"
     ScreenshotPageRows = 62
+    AfterValidationLogRows = 1
     VerticalScrollRate = 1.00
     DatabaseSheetName = "Sheet2"
     DataPrintCellAddress = "A1"
@@ -104,9 +110,10 @@ Class PaperTester
     
     '固有値にデフォルト値を入力する
     OptionRowSeperateKey = " %|% "
-    SpecifyInputValueKey = "<-"
-    SpecifyElementKey = "="
+    SpecifyInputKey = "<-"
+    SpecifyAttributeKey = "="
     SpecifyIndexKey = "#"
+    TextWrapKey = "'"
     WindowActivationMaxWaitSeconds = 3
     RefreshIntervalSeconds = 30
   End Sub
@@ -129,6 +136,26 @@ Class PaperTester
 
   '===== 共通関数 =====
   
+  '数値を切り上げする
+  Private Function Ceil(Number)
+    Ceil = Int(Number)
+    if Ceil <> Number then
+      Ceil = Ceil + 1
+    end if
+  end function
+  
+  '特殊キーを入力する
+  Private Sub KeybdEvent(bVk, bScan, dwFlags, dwExtraInfo)
+    Call excel.ExecuteExcel4Macro(Replace(Replace(Replace(Replace("CALL(""user32"",""keybd_event"",""JJJJJ"", %0, %1, %2, %3)", "%0", bVk), "%1", bScan), "%2", dwFlags), "%3", dwExtraInfo))
+  End Sub
+
+  '文字列をクリップボードに記録する
+  Private Sub CopyText(str)
+    Dim cmd
+    cmd = "cmd /c ""echo " & str & "| clip"""
+    wsh.Run cmd, 0
+  End Sub
+
   'IEの遷移を待つ
   Private Sub IEWait(ie)
     Dim hmsLimit
@@ -178,65 +205,122 @@ Class PaperTester
     ActivateIE = pId
   End Function
 
-  '入力する（SendKeys/Value共通）
-  Private Sub Input(expOptsSet, useSendKeys)
-    Dim aryExpOpts, aryOpt, expOpts, expOpt, idxSep, lenSep, valInput
-    aryExpOpts = Split(expOptsSet, OptionRowSeperateKey)
-    For Each expOpts in aryExpOpts
-      idxSep = InStr(expOpts, SpecifyInputValueKey)
-      lenSep = Len(SpecifyInputValueKey)
-      Set elm = GetElement(Left(expOpts, idxSep - 1))
-      elm.Focus
-      valInput = Trim(Right(expOpts, Len(expOpts) - idxSep - (lenSep - 1)))
-      valInput = Mid(valInput, 2, Len(valInput) - 2)
-      Select Case useSendKeys 
-        Case 0
-          elm.Value = valInput
-        Case 1
-          CopyAndPaste valInput
-        Case 2
-          wsh.SendKeys valInput
-      End Select
-    Next
-  End Sub
+  'テキスト包括キーワードを削除する
+  Private Function Unwrap(exp)
+    Dim expUnwrap
+    expUnwrap = Trim(exp)
+    If (Left(expUnwrap, 1) = TextWrapKey) And (Right(expUnwrap, 1) = TextWrapKey) Then
+      expUnwrap = Right(expUnwrap, Len(expUnwrap) - 1)
+      expUnwrap = Left(expUnwrap, Len(expUnwrap) - 1)
+    End If
+    Unwrap = expUnwrap
+  End Function
 
-  '特殊キーを入力する
-  Private Sub KeybdEvent(bVk, bScan, dwFlags, dwExtraInfo)
-    Call excel.ExecuteExcel4Macro(Replace(Replace(Replace(Replace("CALL(""user32"",""keybd_event"",""JJJJJ"", %0, %1, %2, %3)", "%0", bVk), "%1", bScan), "%2", dwFlags), "%3", dwExtraInfo))
-  End Sub
-
-  '文字列をクリップボードに記録する
-  Private Sub CopyText(str)
-    Dim cmd
-    cmd = "cmd /c ""echo " & str & "| clip"""
-    wsh.Run cmd, 0
-  End Sub
+  '属性指定表現を評価する
+  Private Function EvalAtrSpecExp(exp)
+    Dim expTrim, expValueTrim
+    expTrim = Trim(exp)
+    Dim aryAtrExp(2)
+    aryAtrExp(0) = "value"
+    aryAtrExp(1) = Unwrap(exp)
+    aryAtrExp(2) = 0
+    Dim idxSAKey, idxSIKey, idxTWKey, idxLastTWKey
+    idxSAKey = InStr(expTrim, SpecifyAttributeKey)
+    idxTWKey = InStr(expTrim, TextWrapKey)
+    If ((0 < idxSAKey) And ((idxTWKey = 0) Or (idxSAKey < idxTWKey))) Then
+      aryAtrExp(0) = Trim(Left(expTrim, idxSAKey - 1))
+      expValueTrim = Trim(Right(expTrim, Len(expTrim) - idxSAKey - (Len(SpecifyAttributeKey) - 1)))
+      idxSIKey = InStrRev(expValueTrim, SpecifyIndexKey)
+      idxLastTWKey = InStrRev(expValueTrim, TextWrapKey)
+      If ((0 < idxSIKey) And (idxLastTWKey < idxSIKey)) Then
+        aryAtrExp(1) = Unwrap(Left(expValueTrim, idxSIKey - 1))
+        aryAtrExp(2) = Trim(Right(expValueTrim, Len(expValueTrim) - idxSIKey - (Len(SpecifyIndexKey) - 1)))
+      Else
+        aryAtrExp(1) = Unwrap(expValueTrim)
+      End If
+    End If
+    EvalAtrSpecExp = aryAtrExp
+  End Function
+  
+  '入力値指定表現を評価する
+  Private Function EvalInputSpecExp(exp)
+    Dim aryInputExp(5), aryAtrExp
+    aryInputExp(0) = ""
+    aryInputExp(1) = ""
+    aryInputExp(2) = ""
+    aryInputExp(3) = ""
+    aryInputExp(4) = ""
+    aryInputExp(5) = ""
+    Dim idxSIPKey
+    idxSIPKey = InStr(exp, SpecifyInputKey)
+    If (0 < idxSIPKey) Then
+      aryAtrExp = EvalAtrSpecExp(Left(exp, idxSIPKey - 1))
+      aryInputExp(0) = aryAtrExp(0)
+      aryInputExp(1) = aryAtrExp(1)
+      aryInputExp(2) = aryAtrExp(2)
+      aryAtrExp = EvalAtrSpecExp(Right(exp, Len(exp) - idxSIPKey - (Len(SpecifyInputKey) - 1)))
+      aryInputExp(3) = aryAtrExp(0)
+      aryInputExp(4) = aryAtrExp(1)
+      aryInputExp(5) = aryAtrExp(2)
+    Else
+      aryAtrExp = EvalAtrSpecExp(exp)
+      aryInputExp(0) = aryAtrExp(0)
+      aryInputExp(1) = aryAtrExp(1)
+      aryInputExp(2) = aryAtrExp(2)
+    End If
+    EvalInputSpecExp = aryInputExp
+  End Function
 
   '要素を取得する
-  Private Function GetElement(expElm)
-    Dim elmTgt
-    Set elmTgt = Nothing
-    Dim aryExpElm, aryExpElm2
-    aryExpElm = Split(expElm, SpecifyElementKey)
-    Dim keyElm, valElm, idxElm
-    keyElm = Trim(aryExpElm(0))
-    valElm = Trim(aryExpElm(1))
-    If (0 < InStr(valElm, SpecifyIndexKey)) Then
-      aryExpElm2 = Split(valElm, SpecifyIndexKey)
-      valElm = Trim(aryExpElm2(0))
-      idxElm = Trim(aryExpElm2(1))
-    End If
-    Select Case LCase(keyElm)
+  Private Function GetElement(aryExp)
+    Dim elm
+    Set elm = Nothing
+    Select Case LCase(aryExp(0))
       Case "id"
-        Set elmTgt = doc.getElementById(valElm)
+        Set elm = doc.getElementById(aryExp(1))
       Case "name"
-        Set elmTgt = doc.getElementsByName(valElm)(idxElm)
+        Set elm = doc.getElementsByName(aryExp(1))(aryExp(2))
       Case "tag"
-        Set elmTgt = doc.getElementsByTagName(valElm)(idxElm)
+        Set elm = doc.getElementsByTagName(aryExp(1))(aryExp(2))
       Case "class"
-        Set elmTgt = doc.getElementsByClassName(valElm)(idxElm)
+        Set elm = doc.getElementsByClassName(aryExp(1))(aryExp(2))
     End Select
-    Set GetElement = elmTgt
+    Set GetElement = elm
+    Set elm = Nothing
+  End Function
+
+  '入力する（SendKeys/Value共通）
+  Private Sub Input(exp, useSendKeys)
+    Dim elm
+    Dim aryExpOpts, expOpts, aryOpt
+    aryExpOpts = Split(exp, OptionRowSeperateKey)
+    For Each expOpts in aryExpOpts
+      aryOpt = EvalInputSpecExp(expOpts)
+      Set elm = GetElement(aryOpt)
+      elm.Focus
+      Select Case useSendKeys 
+        Case 0
+          elm.Value = aryOpt(4)
+        Case 1
+          CopyAndPaste aryOpt(4)
+        Case 2
+          wsh.SendKeys aryOpt(4)
+      End Select
+    Next
+    Set elm = Nothing
+  End Sub
+  
+  '属性を取得する
+  Private Function GetAttribute(elm, nmeAtr)
+    Dim atr, nmeAtrLCase
+    nmeAtrLCase = LCase(nmeAtr)
+    Select Case nmeAtrLCase 
+      Case "value"
+        atr = elm.Value
+      Case Else
+        atr = elm.getAttribute(nmeAtr, 2)
+    End Select
+    GetAttribute = atr
   End Function
 
   'スクロールする
@@ -250,14 +334,6 @@ Class PaperTester
     Wscript.Sleep 1000
     Scroll = numNextHeight
   End Function
-
-  '数値を切り上げする
-  Private Function Ceil(Number)
-    Ceil = Int(Number)
-    if Ceil <> Number then
-      Ceil = Ceil + 1
-    end if
-  end function
 
   '繰り返しスクリーンショットを撮る
   Private Sub RepeatScreenShot(isFull, msg)
@@ -289,6 +365,17 @@ Class PaperTester
       numHeight = numHeight + numPageHeight
     Next
   End Sub
+  
+  '検証失敗時のエラーメッセージを取得する
+  Private Function GetValidationMessage(exp, valSpec, valReal)
+    Dim strResult
+    If (valSpec = valReal) Then
+      strResult = "OK"
+    Else
+      strResult = "NG"
+    End If
+    GetValidationMessage = "【" & strResult & "】" & exp & "|" & TextWrapKey & valReal & TextWrapKey
+  End Function
 
   '===== 操作用関数 =====
   
@@ -397,32 +484,36 @@ Class PaperTester
   End Sub
 
   'フォーカスを当てる
-  Public Sub Focus(expElm)
-    Set elm = GetElement(expElm)
+  Public Sub Focus(exp)
+    Dim elm
+    Set elm = GetElement(EvalAtrSpecExp(exp))
     elm.Focus
+    Set elm = Nothing
   End Sub
 
   '入力する（Value）
-  Public Sub ValueInput(expOptsSet)
-    Input expOptsSet, 0
+  Public Sub ValueInput(exp)
+    Input exp, 0
   End Sub
 
   '入力する（Copy&Paste）
-  Public Sub PasteInput(expOptsSet)
-    Input expOptsSet, 1
+  Public Sub PasteInput(exp)
+    Input exp, 1
   End Sub
 
   '入力する（SendKeys）
-  Public Sub KeyInput(expOptsSet)
-    Input expOptsSet, 2
+  Public Sub KeyInput(exp)
+    Input exp, 2
   End Sub
 
   'クリックする
-  Public Sub Click(expElm)
-    Set elm = GetElement(expElm)
+  Public Sub Click(exp)
+    Dim elm
+    Set elm = GetElement(EvalAtrSpecExp(exp))
     elm.Focus
     elm.Click
     IEWait(ie)
+    Set elm = Nothing
   End Sub
 
   '文字列をコピー&ペーストする。
@@ -447,12 +538,12 @@ Class PaperTester
     shtSS.Activate
     Set rng = shtSS.Range( _
       ScreenshotPrintCellAddress _
-        ).Offset(ScreenshotPageRows * idxPasteArea, 0)
+        ).Offset(idxPasteArea, 0)
     rng.Value = msg
     rng.Offset(1, 1).Select
     shtSS.Paste
     Set rng = Nothing
-    idxPasteArea = idxPasteArea + 1
+    idxPasteArea = idxPasteArea + ScreenshotPageRows
   End Sub
 
   'スクリーンショットを撮る（画面全体）
@@ -507,6 +598,52 @@ Class PaperTester
     Set fld = Nothing
     Set rs = Nothing
   End Sub
+  
+  '検証する（検証NG時は処理中断）
+  Public Sub ValidateAttribute(exp)
+    Dim msg
+    msg = Record2ValidateAttribute(exp)
+    If (msg <> "") Then
+      Err.Raise 9999, "PaperTester", "検証NG。" & msg
+    End If
+  End Sub
+
+  '検証する（検証NG時は処理続行）
+  Public Function Record2ValidateAttribute(exp)
+    Const keySepMsg = ", "
+    Dim aryExpOpts, expOpts, msgAll
+    msgAll = ""
+    aryExpOpts = Split(exp, OptionRowSeperateKey)
+    For Each expOpts in aryExpOpts
+      Dim aryInputExp
+      aryInputExp = EvalInputSpecExp(expOpts)
+      Dim elm
+      Set elm = GetElement(aryInputExp)
+      Dim atr
+      atr = GetAttribute(elm, aryInputExp(3))
+      Dim msg
+      msg = GetValidationMessage(expOpts, aryInputExp(4), atr)
+      Dim rng
+      shtSS.Activate
+      Set rng = shtSS.Range( _
+        ScreenshotPrintCellAddress _
+          ).Offset(idxPasteArea, 0)
+      rng.Offset(0, 1).Value = msg
+      Set rng = Nothing
+      idxPasteArea = idxPasteArea + 1
+      If (aryInputExp(4) = atr) Then
+        '処理なし
+      Else
+        msgAll = msgAll & msg & keySepMsg
+      End If
+    Next
+    idxPasteArea = idxPasteArea + AfterValidationLogRows
+    If (msgAll = "") Then
+      Record2ValidateAttribute = "" 
+    Else
+      Record2ValidateAttribute = Left(msgAll, Len(msgAll) - Len(keySepMsg))
+    End If
+  End Function
 
   '===== 後処理 =====
   
@@ -516,7 +653,6 @@ Class PaperTester
     Set wEnu = Nothing
     Set wSvc = Nothing
     Set wIns = Nothing
-    Set elm = Nothing
     Set doc = Nothing
     If (Not(ie is Nothing)) Then
       ie.FullScreen = False

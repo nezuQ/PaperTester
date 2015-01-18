@@ -20,13 +20,12 @@ Set pt = New PaperTester
 Private Function getEndMsg()
   Dim hmsEnd
   hmsEnd = Now
-  Dim secDiff, mntDiff
-  secDiff = DateDiff("s", hmsStart, hmsEnd)
+  Dim mntDiff
   mntDiff = DateDiff("n", hmsStart, hmsEnd)
   getEndMsg = _
-    "開始日時:" & FormatDateTime(hmsStart, 4) & _
-      ", 終了日時:" & FormatDateTime(hmsEnd, 4) & _
-      ", 経過時間:" & mntDiff & "分" & "（" & secDiff & "秒）"
+    "開始日時=" & FormatDateTime(hmsStart, 4) & _
+      ", 終了日時=" & FormatDateTime(hmsEnd, 4) & _
+      ", 経過時間=" & mntDiff & "分" 
 End Function
 
 '例外処理
@@ -49,11 +48,11 @@ pt.EvidenceBookPath = ".\EvidenceTemplate.xlsx"
 pt.ScreenshotSheetName = "Screenshot"
 pt.ScreenshotPrintCellAddress = "B3"
 pt.ScreenshotPageRows = 62
-pt.VerticalScrollRate = 0.85
+pt.AfterValidationLogRows = 2
+pt.VerticalScrollRate = 0.80
 pt.DatabaseSheetName = "Database"
 pt.DataPrintCellAddress = "B3"
 pt.DataIntervalRows = 2
-'※データベースへの接続文字列をここに記入する。
 pt.ConnectionString = ""
 
 pt.Initialize

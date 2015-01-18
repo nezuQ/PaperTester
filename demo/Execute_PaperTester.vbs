@@ -20,13 +20,12 @@ Set pt = New PaperTester
 Private Function getEndMsg()
   Dim hmsEnd
   hmsEnd = Now
-  Dim secDiff, mntDiff
-  secDiff = DateDiff("s", hmsStart, hmsEnd)
+  Dim mntDiff
   mntDiff = DateDiff("n", hmsStart, hmsEnd)
   getEndMsg = _
-    "開始日時:" & FormatDateTime(hmsStart, 4) & _
-      ", 終了日時:" & FormatDateTime(hmsEnd, 4) & _
-      ", 経過時間:" & mntDiff & "分" & "（" & secDiff & "秒）"
+    "開始日時=" & FormatDateTime(hmsStart, 4) & _
+      ", 終了日時=" & FormatDateTime(hmsEnd, 4) & _
+      ", 経過時間=" & mntDiff & "分" 
 End Function
 
 '例外処理
@@ -49,7 +48,8 @@ pt.EvidenceBookPath = ".\EvidenceTemplate.xlsx"
 pt.ScreenshotSheetName = "Screenshot"
 pt.ScreenshotPrintCellAddress = "B3"
 pt.ScreenshotPageRows = 62
-pt.VerticalScrollRate = 0.85
+pt.AfterValidationLogRows = 2
+pt.VerticalScrollRate = 0.80
 pt.DatabaseSheetName = "Database"
 pt.DataPrintCellAddress = "B3"
 pt.DataIntervalRows = 2
@@ -69,21 +69,23 @@ pt.Open : onErrorExit "テストケース = 1, Excel行 = 2"
 pt.Navigate "http://bl.ocks.org/nezuQ/raw/9719897/" : onErrorExit "テストケース = 1, Excel行 = 3"
 pt.MaximumWindow : onErrorExit "テストケース = 1, Excel行 = 4"
 pt.FullScreenShot4VisibleArea "1" : onErrorExit "テストケース = 1, Excel行 = 5"
-pt.ExecuteSQL "SELECT * FROM [Sheet1$] " : onErrorExit "テストケース = , Excel行 = 6"
+pt.Record2ValidateAttribute "id=ddlEndpoint <- '0' %|% id=txtQuery <- 'あああああ '" : onErrorExit "テストケース = 1, Excel行 = 6"
+pt.ExecuteSQL "SELECT * FROM [Sheet1$] " : onErrorExit "テストケース = , Excel行 = 7"
 
-pt.PasteInput "id=txtQuery <- 'ラブライブ！ ' %|% id=txtPHPSessID <- '0'" : onErrorExit "テストケース = 2-1, Excel行 = 8"
-pt.FullScreenShot "2-1" : onErrorExit "テストケース = 2-1, Excel行 = 9"
-pt.Click "tag=input#4" : onErrorExit "テストケース = 2-1, Excel行 = 10"
-pt.ActivateChildWindow : onErrorExit "テストケース = 2-1, Excel行 = 11"
-pt.FullScreenShot "" : onErrorExit "テストケース = 2-1, Excel行 = 12"
-pt.ExecuteSQL "SELECT * FROM [Sheet2$] " : onErrorExit "テストケース = 2-1, Excel行 = 13"
-pt.Close : onErrorExit "テストケース = 2-1, Excel行 = 14"
-pt.ValueInput "id=ddlEndpoint <- '1' %|% id=ddlSearchType <- '1' %|% id=txtQuery <- '艦隊これくしょん' %|% id=txtPHPSessID <- ''" : onErrorExit "テストケース = 2-2, Excel行 = 15"
-pt.FullScreenShot "2-2" : onErrorExit "テストケース = 2-2, Excel行 = 16"
-pt.Click "tag=input#4" : onErrorExit "テストケース = 2-2, Excel行 = 17"
-pt.ActivateChildWindow : onErrorExit "テストケース = 2-2, Excel行 = 18"
-pt.FullScreenShot "" : onErrorExit "テストケース = 2-2, Excel行 = 19"
-pt.ExecuteSQL "SELECT * FROM [Sheet1$] WHERE 列名1 = 2" : onErrorExit "テストケース = 2-2, Excel行 = 20"
+pt.KeyInput "id=txtQuery <- '{DEL 19}'" : onErrorExit "テストケース = 2-1, Excel行 = 9"
+pt.PasteInput "id=txtQuery <- 'ラブライブ！ ' %|% id=txtPHPSessID <- '0'" : onErrorExit "テストケース = 2-1, Excel行 = 10"
+pt.FullScreenShot "2-1" : onErrorExit "テストケース = 2-1, Excel行 = 11"
+pt.Click "tag=input#4" : onErrorExit "テストケース = 2-1, Excel行 = 12"
+pt.ActivateChildWindow : onErrorExit "テストケース = 2-1, Excel行 = 13"
+pt.FullScreenShot "" : onErrorExit "テストケース = 2-1, Excel行 = 14"
+pt.ExecuteSQL "SELECT * FROM [Sheet2$] " : onErrorExit "テストケース = 2-1, Excel行 = 15"
+pt.Close : onErrorExit "テストケース = 2-1, Excel行 = 16"
+pt.ValueInput "id=ddlEndpoint <- '1' %|% id=ddlSearchType <- '1' %|% id=txtQuery <- '艦隊これくしょん' %|% id=txtPHPSessID <- ''" : onErrorExit "テストケース = 2-2, Excel行 = 17"
+pt.FullScreenShot "2-2" : onErrorExit "テストケース = 2-2, Excel行 = 18"
+pt.Click "tag=input#4" : onErrorExit "テストケース = 2-2, Excel行 = 19"
+pt.ActivateChildWindow : onErrorExit "テストケース = 2-2, Excel行 = 20"
+pt.FullScreenShot "" : onErrorExit "テストケース = 2-2, Excel行 = 21"
+pt.ExecuteSQL "SELECT * FROM [Sheet1$] WHERE 列名1 = 2" : onErrorExit "テストケース = 2-2, Excel行 = 22"
 
 '===== 後処理 =====
 On Error Goto 0
