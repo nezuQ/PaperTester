@@ -34,6 +34,68 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
    2. IE起動時にIEが最前面に来なかった場合は、IEをクリックし、最前面に移動する。
    3. 終了メッセージのポップアップを待つ。※Alt + F4 で処理を強制終了できる。（非推奨）
 
+##操作コマンド一覧
+ * IEを開く
+pt.Open
+ * IEを取得する（最初のもの）
+pt.GetIE True
+ * IEを取得する（最後のもの）
+pt.GetIE False
+ * IEを閉じる
+pt.Close
+ * 戻る
+pt.GoBack
+ * 全画面表示を行う
+pt.FullScreen
+ * 全画面表示を止める
+pt.NormalScreen
+ * 画面を最大化する
+pt.MaximumWindow
+ * 画面を最小化する
+pt.MinimumWindow
+ * 画面を標準表示にする
+pt.NormalWindow
+ * 待機する
+pt.Sleep(%0)
+ * URLで遷移する
+pt.Navigate "%0"
+ * 子画面をアクティブにする
+pt.ActivateChildWindow
+ * 親画面をアクティブにする
+pt.ActivateParentWindow
+ * 指定フレームをアクティブにする
+pt.ActivateFrame %0
+ * 元ドキュメントをアクティブにする
+pt.ActivateDocument
+ * フォーカスを当てる
+pt.Focus "%0"
+ * 入力する（Value使用）
+pt.ValueInput "%0"
+ * 入力する（Copy&Paste使用）
+pt.PasteInput "%0"
+ * 入力する（SendKeys使用）
+pt.KeyInput "%0"
+ * クリックする
+pt.Click "%0"
+ * 文字列をコピー&ペーストする
+pt.CopyAndPaste "%0"
+ * キー入力する
+pt.SendKeys "%0"
+ * スクリーンショットを撮る（画面全体）
+pt.FullScreenShot "%0"
+ * スクリーンショットを撮る（アクティブ画面のみ）
+pt.ScreenShot "%0"
+ * スクリーンショットを撮る（画面全体, 表示箇所のみ）
+pt.FullScreenShot4VisibleArea "%0"
+ * スクリーンショットを撮る（アクティブ画面のみ, 表示箇所のみ）
+pt.ScreenShot4VisibleArea "%0"
+ * SQL文を発行する
+pt.ExecuteSQL "%0"
+ * 検証する（検証NG時は処理中断）
+pt.ValidateAttribute "%0"
+ * 検証する（検証NG時は処理続行）
+pt.Record2ValidateAttribute "%0"
+
 ##ライセンス
  * MITライセンス
 
