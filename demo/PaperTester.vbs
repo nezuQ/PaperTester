@@ -645,6 +645,11 @@ Class PaperTester
     End If
   End Function
 
+  'Javascript‚ğÀs‚·‚éB
+  Public Sub ExecuteJS(cmd)
+    ie.Navigate "javascript:" & cmd
+  End Sub
+
   '===== Œãˆ— =====
   
   'I—¹ˆ—
