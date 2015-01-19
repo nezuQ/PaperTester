@@ -96,6 +96,8 @@ ExecuteSQL "%0"
 ValidateAttribute "%0"
  * 検証する（検証NG時は処理続行）  
 Record2ValidateAttribute "%0"
+ * Javascriptを実行する。  
+ExecuteJS "%0"
 
 ##ライセンス
  * MITライセンス

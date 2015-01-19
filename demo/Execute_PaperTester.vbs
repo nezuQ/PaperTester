@@ -87,6 +87,8 @@ pt.ActivateChildWindow : onErrorExit "テストケース = 2-2, Excel行 = 20"
 pt.FullScreenShot "" : onErrorExit "テストケース = 2-2, Excel行 = 21"
 pt.ExecuteSQL "SELECT * FROM [Sheet1$] WHERE 列名1 = 2" : onErrorExit "テストケース = 2-2, Excel行 = 22"
 
+pt.ExecuteJS "alert('任意のJavascriptを実行できます。')" : onErrorExit "テストケース = 2-2, Excel行 = 24"
+
 '===== 後処理 =====
 On Error Goto 0
 Set pt = Nothing
