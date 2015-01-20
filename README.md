@@ -46,6 +46,8 @@ GetIE False
 Close
  * 戻る  
 GoBack
+ * EXEを実行する  
+Run
  * 全画面表示を行う  
 FullScreen
  * 全画面表示を止める  
@@ -60,10 +62,10 @@ NormalWindow
 Sleep %0 
  * URLで遷移する  
 Navigate "%0"
- * 子画面をアクティブにする  
-ActivateChildWindow
- * 親画面をアクティブにする  
-ActivateParentWindow
+ * 次のIEをアクティブにする  
+ActivateNextIE
+ * 前のIEをアクティブにする  
+ActivateBeforeIE
  * 指定フレームをアクティブにする  
 ActivateFrame %0
  * 元ドキュメントをアクティブにする  
@@ -92,10 +94,14 @@ FullScreenShot4VisibleArea "%0"
 ScreenShot4VisibleArea "%0"
  * SQL文を発行する  
 ExecuteSQL "%0"
- * 検証する（検証NG時は処理中断）  
+ * 画面項目を検証する（検証NG時は処理中断）  
 ValidateAttribute "%0"
- * 検証する（検証NG時は処理続行）  
+ * 画面項目を検証する（検証NG時は処理続行）  
 Record2ValidateAttribute "%0"
+ * 画面タイトルを検証する（検証NG時は処理中断）  
+ValidateTitle "%0"
+ * 画面タイトルを検証する（検証NG時は処理続行）  
+Record2ValidateTitle "%0"
  * Javascriptを実行する。  
 ExecuteJS "%0"
 
@@ -103,8 +109,10 @@ ExecuteJS "%0"
  * MITライセンス
 
 ##TODO
- * ElementScreenShot（指定した要素のスクリーンショットを撮る）のコマンドを用意する。
+ * 指定した要素（スクロールバーがある場合はスクロールする）のスクリーンショットを撮りたい。
+ * アクティブ画面のみのスクリーンショットを撮りたい。
  * クリップボードが空でない時、スクリーンショットが失敗する事がある。
+ * 検証時にUNICODE／SJISの違いで結果がNGになる事がある。
 
 ##関連ページ
 Qiita - Excelスクショ問題の解決策を現役エンジニアが本気で考えた。  
