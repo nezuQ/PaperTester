@@ -42,6 +42,9 @@ Class PaperTester
 
   '===== 固定値 =====
   
+  '既定EXE名
+  Public DefaultExeName
+  
   '引数行区切りのキーワード
   Public OptionRowSeperateKey
 
@@ -69,7 +72,7 @@ Class PaperTester
   Private wsh, shl, fs
   Private excel, wbk, shtSS, shtDB, rng
   Private con
-  Private ies(), idxIes(), ie
+  Private exes(), idxExes(), nmeExes(), exe
   Private doc
   Private wLoc, wSvc, wEnu, wIns
   Private idxPasteArea, idxSetArea
@@ -82,11 +85,13 @@ Class PaperTester
     Set excel = WScript.CreateObject("Excel.Application")
     excel.Application.DisplayAlerts = False
 
-    Redim ies(0)
-    Set ies(0) = Nothing
-    Redim idxIes(0)
-    idxIes(0) = 0
-    Set ie = Nothing
+    Redim exes(0)
+    Set exes(0) = Nothing
+    Redim idxExes(0)
+    Redim nmeExes(0)
+    idxExes(0) = 0
+    nmeExes(0) = ""
+    Set exe = Nothing
     Set doc = Nothing
 
     Set wLoc = CreateObject("WbemScripting.SWbemLocator")
@@ -109,6 +114,7 @@ Class PaperTester
     ConnectionString = ""
     
     '固有値にデフォルト値を入力する
+    DefaultExeName = "iexplore.exe"
     OptionRowSeperateKey = " %|% "
     SpecifyInputKey = "<-"
     SpecifyAttributeKey = "="
@@ -144,6 +150,23 @@ Class PaperTester
     end if
   end function
   
+  'EXEを配列に保存する
+  Private Function ShiftExesArray(cntShift)
+    Dim idxExe
+    idxExe = Ubound(exes) + cntShift
+    If (exes(0) is Nothing) Then
+      idxExe = idxExe - 1
+    End If
+    If (idxExe < 0) Then
+      idxExe = 0
+      Set exes(0) = Nothing
+    End If
+    Redim Preserve exes(idxExe)
+    Redim Preserve nmeExes(idxExe)
+    Redim Preserve idxExes(idxExe)
+    ShiftExesArray = idxExe
+  End Function
+  
   '特殊キーを入力する
   Private Sub KeybdEvent(bVk, bScan, dwFlags, dwExtraInfo)
     Call excel.ExecuteExcel4Macro(Replace(Replace(Replace(Replace("CALL(""user32"",""keybd_event"",""JJJJJ"", %0, %1, %2, %3)", "%0", bVk), "%1", bScan), "%2", dwFlags), "%3", dwExtraInfo))
@@ -157,29 +180,29 @@ Class PaperTester
   End Sub
 
   'IEの遷移を待つ
-  Private Sub IEWait(ie)
+  Private Sub IEWait(exe)
     Dim hmsLimit
     hmsLimit = Now + TimeSerial(0, 0, RefreshIntervalSeconds)
-    Do While (ie.Busy = True Or ie.readyState <> 4)
+    Do While (exe.Busy = True Or exe.readyState <> 4)
       Wscript.Sleep 100
       If (hmsLimit < Now) Then
-        ie.Refresh
+        exe.Refresh
         hmsLimit = Now + TimeSerial(0, 0, RefreshIntervalSeconds)
       End If
     Loop
     hmsLimit = Now + TimeSerial(0, 0, RefreshIntervalSeconds)
-    Do Until (ie.document.ReadyState = "complete")
+    Do Until (exe.document.ReadyState = "complete")
       Wscript.Sleep 100
       If (hmsLimit < Now) Then
-        ie.Refresh
+        exe.Refresh
         hmsLimit = Now + TimeSerial(0, 0, RefreshIntervalSeconds)
       End If
     Loop
-    Set doc = ie.document
+    Set doc = exe.document
   End Sub
 
   '指定ウィンドウをアクティブにする
-  Private Sub ActivateWindow(processId)
+  Private Function ActivateWindow(processId)
     Dim cnt, maxCnt
     maxCnt = WindowActivationMaxWaitSeconds * 10
     cnt = 1
@@ -188,21 +211,41 @@ Class PaperTester
       cnt = cnt + 1
       Wscript.Sleep 100
     Loop
-  End Sub
+    ActivateWindow = processId
+  End Function
 
-  'IEをアクティブにする
-  Private Function ActivateIE(isFirst)
+  'EXEをアクティブにする
+  Private Function ActivateEXE(nmeExe, idxExe)
     Dim pId
     pId = -1
+    Dim cntExe
+    cntExe = 0
     For Each wIns in wEnu
       If (Not IsEmpty(wIns.ProcessId)) _
-        And (wIns.Description = "iexplore.exe") Then
+        And (LCase(wIns.Description) = nmeExe) Then
         pId = wIns.ProcessId
-        If (isFirst) Then Exit For
+        If (cntExe = idxExe) Then Exit For
+        cntExe = cntExe + 1
       End If
     Next
     ActivateWindow pId
-    ActivateIE = pId
+    ActivateEXE = pId
+  End Function
+  
+  '実行中のEXEの名前を取得する
+  Private Function GetExeName(idxExe)
+    GetExeName = ""
+    Dim pId
+    pId = -1
+    Dim cntExe
+    cntExe = 0
+    For Each wIns in wEnu
+      If (Not IsEmpty(wIns.ProcessId)) Then
+        GetExeName = wIns.Description
+        If (cntExe = idxExe) Then Exit For
+        cntExe = cntExe + 1
+      End If
+    Next
   End Function
 
   'テキスト包括キーワードを削除する
@@ -327,10 +370,10 @@ Class PaperTester
   Private Function Scroll(numHeight)
     Dim numNextHeight
     numNextHeight = numHeight
-    If (ie.document.body.ScrollHeight < numNextHeight) Then
-      numNextHeight = ie.document.body.ScrollHeight
+    If (exe.document.body.ScrollHeight < numNextHeight) Then
+      numNextHeight = exe.document.body.ScrollHeight
     End If
-    ie.Navigate "javascript:scroll(0, " & numNextHeight & ")"
+    exe.Navigate "javascript:scroll(0, " & numNextHeight & ")"
     Wscript.Sleep 1000
     Scroll = numNextHeight
   End Function
@@ -346,9 +389,9 @@ Class PaperTester
     '縦幅からスクリーンショット回数を算出する
     Dim cntPage, numHeight, numPageHeight
     numHeight = 0
-    numPageHeight = ie.Height * VerticalScrollRate
-    If (numPageHeight < ie.document.body.ScrollHeight) Then
-      cntPage = Ceil(ie.document.body.ScrollHeight / numPageHeight)
+    numPageHeight = exe.Height * VerticalScrollRate
+    If (numPageHeight < exe.document.body.ScrollHeight) Then
+      cntPage = Ceil(exe.document.body.ScrollHeight / numPageHeight)
     Else
       cntPage = 1
     End If
@@ -381,65 +424,92 @@ Class PaperTester
   
   'InternetExplorerを開く
   Public Sub Open()
-    Set ies(0) = CreateObject("InternetExplorer.Application")
-    Set ie = ies(0)
-    ie.Visible = True
-    idxIes(0) = ActivateIE(False)
+    Dim idxNextExe
+    idxNextExe = ShiftExesArray(1)
+    Set exe = CreateObject("InternetExplorer.Application")
+    Set exes(idxNextExe) = exe
+    exe.Visible = True
+    nmeExes(idxNextExe) = DefaultExeName
+    idxExes(idxNextExe) = ActivateEXE(nmeExes(0), -1)
   End Sub
-
+  
   'InternetExplorerを取得する
-  Public Sub GetIE(isFirst)
+  Public Sub GetIE(idxExe)
+    Dim idxNextExe
+    idxNextExe = ShiftExesArray(1)
     Dim win
+    Dim cntExe
+    cntExe = 0
     For Each win In shl.Windows
       If TypeName(win.document) = "HTMLDocument" Then
         'HTMLDocument型の場合
-        Set ies(0) = win
-        Set ie = ies(0)
-        If (isFirst) Then Exit For
+        Set exes(idxNextExe) = win
+        Set exe = exes(idxNextExe)
+        If (idxExe = cntExe) Then Exit For
+        cntExe = cntExe + 1
       End If
     Next
-    ie.Visible = True
-    idxIes(0) = ActivateIE(isFirst)
+    exe.Visible = True
+    nmeExes(idxNextExe) = DefaultExeName
+    idxExes(idxNextExe) = ActivateEXE(nmeExes(idxNextExe), idxExe)
+  End Sub
+  
+  'EXEを起動する
+  Public Sub Run(adrExe)
+    Dim idxNextExe
+    idxNextExe = ShiftExesArray(1)
+    Set exe = wsh.Exec(adrExe)
+    Dim cntWait, i
+    i = 0
+    cntWait = WindowActivationMaxWaitSeconds / 100
+    Do While exe.Status = 0
+      i = i + 1
+      If (cntWait < i) Then Exit Do
+      WScript.Sleep 100
+    Loop
+    Set exes(idxNextExe) = exe
+    nmeExes(idxNextExe) = Trim(Right(adrExe, Len(adrExe) - InStrRev(adrExe, "\")))
+    idxExes(idxNextExe) = ActivateWindow(exe.ProcessID)
   End Sub
 
   'InternetExplorerを閉じる
   Public Sub Close()
-    ie.Quit
-    If (0 < Ubound(ies)) Then
-      ActivateParentWindow
+    exe.Quit
+    If (0 < Ubound(exes)) Then
+      ActivateBeforeIE
     Else
-      Set ie = Nothing
+      ShiftExesArray -1
     End If
   End Sub
 
   '戻る
   Public Sub GoBack()
-    ie.GoBack
+    exe.GoBack
   End Sub
 
   '全画面表示を行う
   Public Sub FullScreen()
-    ie.FullScreen = True
+    exe.FullScreen = True
   End Sub
 
   '全画面表示を止める
   Sub NormalScreen()
-    ie.FullScreen = False
+    exe.FullScreen = False
   End Sub
 
   '最大化する
   Public Sub MaximumWindow()
-    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & ie.Hwnd & ", 3)"
+    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 3)"
   End Sub
 
   '最小化する
   Public Sub MinimumWindow()
-    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & ie.Hwnd & ", 2)"
+    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 2)"
   End Sub
 
   '標準表示にする
   Public Sub NormalWindow()
-    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & ie.Hwnd & ", 1)"
+    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 1)"
   End Sub
 
   '待機する
@@ -449,28 +519,27 @@ Class PaperTester
 
   'URLで遷移する
   Public Sub Navigate(url)
-    ie.Navigate url
-    IEWait(ie)
+    exe.Navigate url
+    IEWait(exe)
   End Sub
 
-  '子画面をアクティブにする
-  Public Sub ActivateChildWindow()
-    Redim Preserve ies(Ubound(ies) + 1)
-    Redim Preserve idxIes(Ubound(idxIes) + 1)
+  '次のInternetExolorerをアクティブにする
+  Public Sub ActivateNextIE()
+    ShiftExesArray 1
     WScript.Sleep 1000
-    Set ies(Ubound(ies)) = shl.Windows(shl.Windows.Count - 1)
-    Set ie = ies(Ubound(ies))
-    idxIes(Ubound(idxIes)) = ActivateIE(False)
-    IEWait(ie)
+    Set exes(Ubound(exes)) = shl.Windows(shl.Windows.Count - 1)
+    Set exe = exes(Ubound(exes))
+    nmeExes(Ubound(nmeExes)) = GetExeName(-1)
+    idxExes(Ubound(idxExes)) = ActivateEXE(nmeExes(Ubound(nmeExes)), False)
+    IEWait(exe)
   End Sub
 
-  '親画面をアクティブにする
-  Public Sub ActivateParentWindow()
-    Redim Preserve ies(Ubound(ies) - 1)
-    Redim Preserve idxIes(Ubound(idxIes) - 1)
-    Set ie = ies(Ubound(ies))
-    ActivateWindow idxIes(Ubound(ies))
-    IEWait(ie)
+  '前のInternetExolorerをアクティブにする
+  Public Sub ActivateBeforeIE()
+    ShiftExesArray -1
+    Set exe = exes(Ubound(exes))
+    ActivateWindow idxExes(Ubound(exes))
+    IEWait(exe)
   End Sub
 
   '指定フレームをアクティブにする
@@ -480,7 +549,7 @@ Class PaperTester
 
   '元ドキュメントをアクティブにする
   Public Sub ActivateDocument()
-    Set doc = ie.document
+    Set doc = exe.document
   End Sub
 
   'フォーカスを当てる
@@ -512,7 +581,7 @@ Class PaperTester
     Set elm = GetElement(EvalAtrSpecExp(exp))
     elm.Focus
     elm.Click
-    IEWait(ie)
+    IEWait(exe)
     Set elm = Nothing
   End Sub
 
@@ -599,7 +668,7 @@ Class PaperTester
     Set rs = Nothing
   End Sub
   
-  '検証する（検証NG時は処理中断）
+  '画面項目を検証する（検証NG時は処理中断）
   Public Sub ValidateAttribute(exp)
     Dim msg
     msg = Record2ValidateAttribute(exp)
@@ -608,7 +677,7 @@ Class PaperTester
     End If
   End Sub
 
-  '検証する（検証NG時は処理続行）
+  '画面項目を検証する（検証NG時は処理続行）
   Public Function Record2ValidateAttribute(exp)
     Const keySepMsg = ", "
     Dim aryExpOpts, expOpts, msgAll
@@ -645,9 +714,37 @@ Class PaperTester
     End If
   End Function
 
+  '画面タイトルを検証する（検証NG時は処理中断）
+  Public Sub ValidateTitle(title)
+    Dim msg
+    msg = Record2ValidateTitle(title)
+    If (msg <> "") Then
+      Err.Raise 9999, "PaperTester", "検証NG。" & msg
+    End If
+  End Sub
+
+  '画面タイトルを検証する（検証NG時は処理続行）
+  Public Function Record2ValidateTitle(title)
+    Dim msg
+    msg = GetValidationMessage(title, title, doc.Title)
+    Dim rng
+    shtSS.Activate
+    Set rng = shtSS.Range( _
+      ScreenshotPrintCellAddress _
+        ).Offset(idxPasteArea, 0)
+    rng.Offset(0, 1).Value = msg
+    Set rng = Nothing
+    idxPasteArea = idxPasteArea + 1
+    If (msg = "") Then
+      Record2ValidateTitle = "" 
+    Else
+      Record2ValidateTitle = msg
+    End If
+  End Function
+
   'Javascriptを実行する。
   Public Sub ExecuteJS(cmd)
-    ie.Navigate "javascript:" & cmd
+    exe.Navigate "javascript:" & cmd
   End Sub
 
   '===== 後処理 =====
@@ -659,12 +756,11 @@ Class PaperTester
     Set wSvc = Nothing
     Set wIns = Nothing
     Set doc = Nothing
-    If (Not(ie is Nothing)) Then
-      ie.FullScreen = False
-      Set ie = Nothing
+    If (Not(exe is Nothing)) Then
+      Set exe = Nothing
     End If
-    For i = LBound(ies) to UBound(ies)
-      Set ies(i) = Nothing
+    For i = LBound(exes) to UBound(exes)
+      Set exes(i) = Nothing
     Next
     Set rng = Nothing
     Set shtSS = Nothing
