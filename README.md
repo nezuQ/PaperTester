@@ -39,15 +39,15 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
  * IEを開く  
 Open
  * IEを取得する（最初のもの）  
-GetIE True
+GetIE 0
  * IEを取得する（最後のもの）  
-GetIE False
+GetIE -1
  * IEを閉じる  
 Close
  * 戻る  
 GoBack
  * EXEを実行する  
-Run
+Run "%0"
  * 全画面表示を行う  
 FullScreen
  * 全画面表示を止める  
@@ -113,6 +113,7 @@ ExecuteJS "%0"
  * アクティブ画面のみのスクリーンショットを撮りたい。
  * クリップボードが空でない時、スクリーンショットが失敗する事がある。
  * 検証時にUNICODE／SJISの違いで結果がNGになる事がある。
+ * 起動時、IEがトップに来ない。
 
 ##関連ページ
 Qiita - Excelスクショ問題の解決策を現役エンジニアが本気で考えた。  
