@@ -42,7 +42,7 @@ Class PaperTester
 
   '===== 固定値 =====
   
-  '既定EXE名
+  '既定で起動するEXEの名前（IE）
   Public DefaultExeName
   
   '引数行区切りのキーワード
@@ -62,6 +62,9 @@ Class PaperTester
 
   '画面のアクティベーション処理の最大待機秒
   Public WindowActivationMaxWaitSeconds
+
+  'EXE起動の最大待機秒
+  Public RunMaxWaitSeconds
 
   'ページ遷移失敗時のリフレッシュ処理間隔
   Public RefreshIntervalSeconds
@@ -121,6 +124,7 @@ Class PaperTester
     SpecifyIndexKey = "#"
     TextWrapKey = "'"
     WindowActivationMaxWaitSeconds = 3
+    RunMaxWaitSeconds = 10
     RefreshIntervalSeconds = 30
   End Sub
   
@@ -429,6 +433,8 @@ Class PaperTester
     Set exe = CreateObject("InternetExplorer.Application")
     Set exes(idxNextExe) = exe
     exe.Visible = True
+    WScript.Sleep 1000
+    wsh.SendKeys "%{TAB}", True
     nmeExes(idxNextExe) = DefaultExeName
     idxExes(idxNextExe) = ActivateEXE(nmeExes(0), -1)
   End Sub
@@ -459,14 +465,15 @@ Class PaperTester
     Dim idxNextExe
     idxNextExe = ShiftExesArray(1)
     Set exe = wsh.Exec(adrExe)
-    Dim cntWait, i
-    i = 0
-    cntWait = WindowActivationMaxWaitSeconds / 100
+    Dim cnt, cntMax
+    cnt = 0
+    cntMax = RunMaxWaitSeconds * 10     
     Do While exe.Status = 0
-      i = i + 1
-      If (cntWait < i) Then Exit Do
+      cnt = cnt + 1
       WScript.Sleep 100
+      If (cnt = cntMax) Then Exit Do
     Loop
+    wsh.SendKeys "%{TAB}", True
     Set exes(idxNextExe) = exe
     nmeExes(idxNextExe) = Trim(Right(adrExe, Len(adrExe) - InStrRev(adrExe, "\")))
     idxExes(idxNextExe) = ActivateWindow(exe.ProcessID)
