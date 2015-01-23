@@ -603,9 +603,6 @@ Class PaperTester
     idxExes(idxNextExe) = exe.ProcessID
     BringWindowToTop exe.Hwnd
     ActivateWindow exe.ProcessID
-    If (exe.Hwnd <> GetActiveWindow()) Then
-      wsh.SendKeys("%({TAB})")
-    End If
   End Sub
   
   'InternetExplorer/EXE‚ð•Â‚¶‚é

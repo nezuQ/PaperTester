@@ -23,7 +23,7 @@ Class PaperTester_EXE
 
   'オブジェクト作成イベント
   Private Sub Class_Initialize()
-    Set wsh = WScript.CreateObject("WScript.Shell")
+    Set wsh = CreateObject("WScript.Shell")
     Set excel = WScript.CreateObject("Excel.Application")
     ProcessID = ""
     ProcessName = ""
@@ -194,7 +194,7 @@ Class PaperTester
   
   'オブジェクト作成イベント
   Private Sub Class_Initialize
-    Set wsh = WScript.CreateObject("WScript.Shell")
+    Set wsh = CreateObject("WScript.Shell")
     Set shl = CreateObject("Shell.Application")
     Set fs = CreateObject("Scripting.FileSystemObject")
     Set excel = WScript.CreateObject("Excel.Application")
@@ -603,9 +603,6 @@ Class PaperTester
     idxExes(idxNextExe) = exe.ProcessID
     BringWindowToTop exe.Hwnd
     ActivateWindow exe.ProcessID
-    If (exe.Hwnd <> GetActiveWindow()) Then
-      wsh.SendKeys("%({TAB})")
-    End If
   End Sub
   
   'InternetExplorer/EXEを閉じる
