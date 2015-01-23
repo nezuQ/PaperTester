@@ -6,6 +6,118 @@ Option Explicit
 'This software is released under the MIT License.
 'https://github.com/nezuQ/PaperTester/blob/master/LICENSE.txt
 
+
+Class PaperTester_EXE
+  
+  Private exe, wsh, shl, excel
+  Private m_adr, m_fullScreen
+  
+  'プロセスID
+  Public ProcessID
+  
+  'プロセス名（実行ファイル名）
+  Public ProcessName
+  
+  'Windowのコントローラ
+  Public Hwnd
+
+  'オブジェクト作成イベント
+  Private Sub Class_Initialize()
+    Set wsh = CreateObject("WScript.Shell")
+    Set excel = WScript.CreateObject("Excel.Application")
+    ProcessID = ""
+    ProcessName = ""
+    Hwnd = 0
+    m_adr = ""
+  End Sub
+
+  '実行ファイルのパス
+  Public Property Get Path
+    Path = m_adr
+  End Property
+  
+  'フルスクリーン状態のON/OFF
+  Public Property Let FullScreen(doFullScreen)
+    If (m_fullScreen = doFullScreen) Then
+      If (doFullScreen) Then
+        wsh.SendKeys "% X"
+      Else
+        wsh.SendKeys "% R"
+      End If
+    End If
+    m_fullScreen = doFullScreen
+  End Property
+  
+  Public Property Get FullScreen
+    FullScreen = m_fullScreen 
+  End Property
+  
+  'HWNDからプロセスIDを取得する
+  Private Function GetPIDByHWND(hwnd)
+    GetPIDByHWND = excel.ExecuteExcel4Macro("CALL(""user32"", ""GetWindowThreadProcessId"", ""2JN"", " & CStr(hwnd) & ", 0)")
+  End Function
+  
+  'HWNDをプロセスIDで取得する
+  Private Function GetHWNDByPID(pId)
+    Dim hwnd, pIdLast
+    hwnd = excel.ExecuteExcel4Macro("CALL(""user32"", ""GetDesktopWindow"", ""J"")")
+    hwnd = excel.ExecuteExcel4Macro("CALL(""user32"", ""GetWindow"", ""JJJ"", " & CStr(hwnd) & ", 5)")
+    GetHWNDByPID = 0
+    Do While (0 <> hwnd)
+      pIdLast = GetPIDByHWND(hwnd)
+      If (pId = pIdLast) Then
+        GetHWNDByPID = hwnd
+        Exit Do
+      End If
+      hwnd = excel.ExecuteExcel4Macro("CALL(""user32"", ""GetWindow"", ""JJJ"", " & CStr(hwnd) & ", 2)")
+    Loop
+  End Function
+
+  '起動する
+  Public Sub Run(adr)
+    m_adr = adr
+    Set exe = wsh.Exec(adr)
+    m_fullScreen = False
+    Wscript.Sleep 1000
+    Dim cmd
+    cmd = Split(Trim(adr) & " ", " ")(0)
+    ProcessID = exe.ProcessID
+    ProcessName = Trim(Right(cmd, Len(cmd) - InStrRev(cmd, "\")))
+    Hwnd = GetHWNDByPID(ProcessID)
+  End Sub
+  
+  '戻る（BackSpace）
+  Public Sub GoBack()
+    wsh.SendKeys("{BS}")
+  End Sub
+
+  '終了する
+  Public Sub Quit()
+    exe.Terminate
+    Set exe = Nothing
+  End Sub
+  
+  '終了処理
+  Public Sub Terminate()
+    If (exe is Nothing) Then 
+      ' 処理なし
+    Else
+      Quit
+    End If
+    
+    Set wsh = Nothing
+    Set shl = Nothing
+    Set excel = Nothing
+  End Sub
+  
+  'オブジェクト作成イベント
+  Private Sub Class_Terminate()
+    Terminate
+  End Sub
+  
+End Class
+
+
 Class PaperTester
 
   '===== 設定値 =====
@@ -63,11 +175,11 @@ Class PaperTester
   '画面のアクティベーション処理の最大待機秒
   Public WindowActivationMaxWaitSeconds
 
-  'EXE起動の最大待機秒
-  Public RunMaxWaitSeconds
-
   'ページ遷移失敗時のリフレッシュ処理間隔
   Public RefreshIntervalSeconds
+  
+  'EXEクラスの型名
+  Public ExeTypeName
 
   '===== 前処理 =====
   
@@ -82,7 +194,7 @@ Class PaperTester
   
   'オブジェクト作成イベント
   Private Sub Class_Initialize
-    Set wsh = WScript.CreateObject("WScript.Shell")
+    Set wsh = CreateObject("WScript.Shell")
     Set shl = CreateObject("Shell.Application")
     Set fs = CreateObject("Scripting.FileSystemObject")
     Set excel = WScript.CreateObject("Excel.Application")
@@ -124,8 +236,8 @@ Class PaperTester
     SpecifyIndexKey = "#"
     TextWrapKey = "'"
     WindowActivationMaxWaitSeconds = 3
-    RunMaxWaitSeconds = 10
     RefreshIntervalSeconds = 30
+    ExeTypeName = "PaperTester_EXE"
   End Sub
   
   '初期化処理
@@ -154,6 +266,22 @@ Class PaperTester
     end if
   end function
   
+  'Windowを最前面に移動する
+  Private Sub BringWindowToTop(hwnd)
+    excel.ExecuteExcel4Macro("CALL(""user32"",""SetWindowPos"",""JJJJJJJJ""," & hwnd & ",-1,0,0,0,0,3)")
+    excel.ExecuteExcel4Macro("CALL(""user32"",""SetWindowPos"",""JJJJJJJJ""," & hwnd & ",-2,0,0,0,0,3)")
+  End Sub  
+  
+  'Windowを最後面に移動する
+  Private Sub BringWindowToBottom(hwnd)
+    excel.ExecuteExcel4Macro("CALL(""user32"",""SetWindowPos"",""JJJJJJJJ""," & hwnd & ",1,0,0,0,0,3)")
+  End Sub  
+  
+  'アクティブWindowのHWNDを取得する
+  Private Function GetActiveWindow()
+    GetActiveWindow = excel.ExecuteExcel4Macro("CALL(""user32"",""GetActiveWindow"",""J"")")
+  End Function  
+  
   'EXEを配列に保存する
   Private Function ShiftExesArray(cntShift)
     Dim idxExe
@@ -164,6 +292,8 @@ Class PaperTester
     If (idxExe < 0) Then
       idxExe = 0
       Set exes(0) = Nothing
+      idxExes(0) = 0
+      nmeExes(0) = ""
     End If
     Redim Preserve exes(idxExe)
     Redim Preserve nmeExes(idxExe)
@@ -173,7 +303,7 @@ Class PaperTester
   
   '特殊キーを入力する
   Private Sub KeybdEvent(bVk, bScan, dwFlags, dwExtraInfo)
-    Call excel.ExecuteExcel4Macro(Replace(Replace(Replace(Replace("CALL(""user32"",""keybd_event"",""JJJJJ"", %0, %1, %2, %3)", "%0", bVk), "%1", bScan), "%2", dwFlags), "%3", dwExtraInfo))
+    Call excel.ExecuteExcel4Macro("CALL(""user32"",""keybd_event"",""JJJJJ"", " & bVk & ", " & bScan & ", " & dwFlags & ", " & dwExtraInfo & ")")
   End Sub
 
   '文字列をクリップボードに記録する
@@ -215,37 +345,36 @@ Class PaperTester
       cnt = cnt + 1
       Wscript.Sleep 100
     Loop
-    ActivateWindow = processId
+    ActivateWindow = (cnt < maxCnt)
   End Function
 
-  'EXEをアクティブにする
-  Private Function ActivateEXE(nmeExe, idxExe)
+  'プロセスIDをプロセス名で取得する
+  Private Function GetProcIDByName(nmeExe, idxExe)
     Dim pId
     pId = -1
     Dim cntExe
     cntExe = 0
     For Each wIns in wEnu
       If (Not IsEmpty(wIns.ProcessId)) _
-        And (LCase(wIns.Description) = nmeExe) Then
+        And (LCase(wIns.Description) = LCase(nmeExe)) Then
         pId = wIns.ProcessId
         If (cntExe = idxExe) Then Exit For
         cntExe = cntExe + 1
       End If
     Next
-    ActivateWindow pId
-    ActivateEXE = pId
+    GetProcIDByName = pId
   End Function
   
-  '実行中のEXEの名前を取得する
-  Private Function GetExeName(idxExe)
-    GetExeName = ""
+  'プロセス名をインデックスで取得する
+  Private Function GetProcNameByIndex(idxExe)
+    GetProcNameByIndex = ""
     Dim pId
     pId = -1
     Dim cntExe
     cntExe = 0
     For Each wIns in wEnu
       If (Not IsEmpty(wIns.ProcessId)) Then
-        GetExeName = wIns.Description
+        GetProcNameByIndex = wIns.Description
         If (cntExe = idxExe) Then Exit For
         cntExe = cntExe + 1
       End If
@@ -427,16 +556,17 @@ Class PaperTester
   '===== 操作用関数 =====
   
   'InternetExplorerを開く
-  Public Sub Open()
+  Public Sub OpenIE()
     Dim idxNextExe
     idxNextExe = ShiftExesArray(1)
     Set exe = CreateObject("InternetExplorer.Application")
     Set exes(idxNextExe) = exe
     exe.Visible = True
     WScript.Sleep 1000
-    wsh.SendKeys "%{TAB}", True
     nmeExes(idxNextExe) = DefaultExeName
-    idxExes(idxNextExe) = ActivateEXE(nmeExes(0), -1)
+    idxExes(idxNextExe) = GetProcIDByName(nmeExes(0), -1)
+    BringWindowToTop exe.Hwnd
+    ActivateWindow idxExes(idxNextExe)
   End Sub
   
   'InternetExplorerを取得する
@@ -457,30 +587,29 @@ Class PaperTester
     Next
     exe.Visible = True
     nmeExes(idxNextExe) = DefaultExeName
-    idxExes(idxNextExe) = ActivateEXE(nmeExes(idxNextExe), idxExe)
+    idxExes(idxNextExe) = GetProcIDByName(DefaultExeName, idxExe)
+    BringWindowToTop exe.Hwnd
+    ActivateWindow idxExes(idxNextExe)
   End Sub
   
   'EXEを起動する
   Public Sub Run(adrExe)
     Dim idxNextExe
     idxNextExe = ShiftExesArray(1)
-    Set exe = wsh.Exec(adrExe)
-    Dim cnt, cntMax
-    cnt = 0
-    cntMax = RunMaxWaitSeconds * 10     
-    Do While exe.Status = 0
-      cnt = cnt + 1
-      WScript.Sleep 100
-      If (cnt = cntMax) Then Exit Do
-    Loop
-    wsh.SendKeys "%{TAB}", True
+    Set exe = new PaperTester_EXE
+    exe.Run adrExe
     Set exes(idxNextExe) = exe
-    nmeExes(idxNextExe) = Trim(Right(adrExe, Len(adrExe) - InStrRev(adrExe, "\")))
-    idxExes(idxNextExe) = ActivateWindow(exe.ProcessID)
+    nmeExes(idxNextExe) = exe.ProcessName
+    idxExes(idxNextExe) = exe.ProcessID
+    BringWindowToTop exe.Hwnd
+    ActivateWindow exe.ProcessID
+    If (exe.Hwnd <> GetActiveWindow()) Then
+      wsh.SendKeys("%({TAB})")
+    End If
   End Sub
-
-  'InternetExplorerを閉じる
-  Public Sub Close()
+  
+  'InternetExplorer/EXEを閉じる
+  Public Sub Quit()
     exe.Quit
     If (0 < Ubound(exes)) Then
       ActivateBeforeIE
@@ -506,17 +635,29 @@ Class PaperTester
 
   '最大化する
   Public Sub MaximumWindow()
-    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 3)"
+    If (TypeName(exe) = ExeTypeName) Then
+      wsh.SendKeys("% X")
+    Else
+      excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 3)"
+    End If
   End Sub
 
   '最小化する
   Public Sub MinimumWindow()
-    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 2)"
+    If (TypeName(exe) = ExeTypeName) Then
+      wsh.SendKeys("% N")
+    Else
+      excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 2)"
+    End If
   End Sub
 
   '標準表示にする
   Public Sub NormalWindow()
-    excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 1)"
+    If (TypeName(exe) = ExeTypeName) Then
+      wsh.SendKeys("% R")
+    Else
+      excel.ExecuteExcel4Macro "CALL(""user32"", ""ShowWindow"", ""JJJ"", " & exe.Hwnd & ", 1)"
+    End If
   End Sub
 
   '待機する
@@ -532,21 +673,25 @@ Class PaperTester
 
   '次のInternetExolorerをアクティブにする
   Public Sub ActivateNextIE()
-    ShiftExesArray 1
+    Dim idxNextExe
+    idxNextExe = ShiftExesArray(1)
     WScript.Sleep 1000
-    Set exes(Ubound(exes)) = shl.Windows(shl.Windows.Count - 1)
-    Set exe = exes(Ubound(exes))
-    nmeExes(Ubound(nmeExes)) = GetExeName(-1)
-    idxExes(Ubound(idxExes)) = ActivateEXE(nmeExes(Ubound(nmeExes)), False)
+    Set exes(idxNextExe) = shl.Windows(shl.Windows.Count - 1)
+    Set exe = exes(idxNextExe)
+    nmeExes(idxNextExe) = GetProcNameByIndex(-1)
+    idxExes(idxNextExe) = GetProcIDByName(nmeExes(idxNextExe), -1)
     IEWait(exe)
+    ActivateWindow idxExes(idxNextExe)
+    BringWindowToTop exe.Hwnd
   End Sub
 
   '前のInternetExolorerをアクティブにする
   Public Sub ActivateBeforeIE()
-    ShiftExesArray -1
-    Set exe = exes(Ubound(exes))
-    ActivateWindow idxExes(Ubound(exes))
-    IEWait(exe)
+    Dim idxNextExe
+    idxNextExe = ShiftExesArray(-1)
+    Set exe = exes(idxNextExe)
+    ActivateWindow idxExes(idxNextExe)
+    BringWindowToTop exe.Hwnd
   End Sub
 
   '指定フレームをアクティブにする

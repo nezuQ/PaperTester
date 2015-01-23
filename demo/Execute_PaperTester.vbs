@@ -65,7 +65,7 @@ On Error Resume Next
 '===== –{ˆ— =====
 '¦PaperTester.xlsx‚Ì‘€ìƒRƒ}ƒ“ƒh—ñ‚ÌVBScriptƒRƒ}ƒ“ƒh‚ğ‚±‚±‚É“\‚è•t‚¯‚éB
 
-pt.Open : onErrorExit "ƒeƒXƒgƒP[ƒX = 1, Excels = 2"
+pt.OpenIE : onErrorExit "ƒeƒXƒgƒP[ƒX = 1, Excels = 2"
 pt.Navigate "http://bl.ocks.org/nezuQ/raw/9719897/" : onErrorExit "ƒeƒXƒgƒP[ƒX = 1, Excels = 3"
 pt.MaximumWindow : onErrorExit "ƒeƒXƒgƒP[ƒX = 1, Excels = 4"
 pt.FullScreenShot4VisibleArea "1" : onErrorExit "ƒeƒXƒgƒP[ƒX = 1, Excels = 5"
@@ -74,16 +74,28 @@ pt.Record2ValidateAttribute "id=ddlEndpoint <- '0' %|% id=txtQuery <- '‚ ‚ ‚ ‚ ‚
 pt.ExecuteSQL "SELECT * FROM [Sheet1$] " : onErrorExit "ƒeƒXƒgƒP[ƒX = , Excels = 8"
 
 pt.ValueInput "id=ddlEndpoint <- '1' %|% id=ddlSearchType <- '1' %|% id=txtQuery <- 'ŠÍ‘à‚±‚ê‚­‚µ‚å‚ñ' %|% id=txtPHPSessID <- ''" : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 10"
-pt.FullScreenShot "2-2" : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 11"
+pt.FullScreenShot "2-1" : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 11"
 pt.Click "tag=input#4" : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 12"
 pt.ActivateNextIE : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 13"
 pt.FullScreenShot "" : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 14"
 pt.ExecuteSQL "SELECT * FROM [Sheet1$] WHERE —ñ–¼1 = 2" : onErrorExit "ƒeƒXƒgƒP[ƒX = 2-1, Excels = 15"
 
-pt.Close : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 17"
-pt.ExecuteJS "alert('”CˆÓ‚ÌJavascript‚ğÀs‚Å‚«‚Ü‚·B')" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 18"
-pt.Close : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 19"
-
+pt.Quit : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 17"
+pt.Run "notepad.exe" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 18"
+pt.MaximumWindow : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 19"
+pt.Paste "yŠJnz”CˆÓ‚ÌEXE‚ğƒL[‘€ì‚Å‚«‚Ü‚·B" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 20"
+pt.FullScreenShot4VisibleArea "3-1" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 21"
+pt.Sleep 1 : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 22"
+pt.SendKeys "%(FNN)" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 23"
+pt.Paste "yI—¹zƒƒ‚’ ‚ğŠJ‚«’¼‚µ‚Ü‚µ‚½B" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 24"
+pt.FullScreenShot4VisibleArea "" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 25"
+pt.Sleep 1 : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 26"
+pt.Quit : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 27"
+pt.Sleep 1 : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 28"
+pt.ExecuteJS "alert('”CˆÓ‚ÌJavascript‚ğÀs‚Å‚«‚Ü‚·B')" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 29"
+pt.Sleep 1 : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 30"
+pt.SendKeys "{ENTER}" : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 31"
+pt.Quit : onErrorExit "ƒeƒXƒgƒP[ƒX = 3-1, Excels = 32"
 
 '===== Œãˆ— =====
 On Error Goto 0
