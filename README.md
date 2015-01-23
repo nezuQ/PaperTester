@@ -36,80 +36,84 @@ IE/EXEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/971
 
 ##操作コマンド一覧(PaperTester.vbs)
 
- * IEを開く
-OpenIE
- * IEを取得する（最初のもの）
+ * IEを開く  
+OpenIE  
+ * IEを取得する（最初のもの）  
 GetIE 0
- * IEを取得する（最後のもの）
+ * IEを取得する（最後のもの）  
 GetIE -1
- * EXEを起動する
+ * EXEを起動する  
 Run "%0"
- * IE/EXEを閉じる
+ * IE/EXEを閉じる  
 Quit
- * 戻る
+ * 戻る  
 GoBack
- * 全画面表示を行う
+ * 全画面表示を行う  
 FullScreen
- * 全画面表示を止める
+ * 全画面表示を止める  
 NormalScreen
- * 画面を最大化する
+ * 画面を最大化する  
 MaximumWindow
- * 画面を最小化する
+ * 画面を最小化する  
 MinimumWindow
- * 画面を標準表示にする
+ * 画面を標準表示にする  
 NormalWindow
- * 待機する
+ * 待機する  
 Sleep %0
- * URLで遷移する
+ * URLで遷移する  
 Navigate "%0"
- * 次のIEをアクティブにする
+ * 次のIEをアクティブにする  
 ActivateNextIE
- * 前のIEをアクティブにする
+ * 前のIEをアクティブにする  
 ActivateBeforeIE
- * 指定フレームをアクティブにする
+ * 指定フレームをアクティブにする  
 ActivateFrame %0
- * 元ドキュメントをアクティブにする
+ * 元ドキュメントをアクティブにする  
 ActivateDocument
- * フォーカスを当てる
+ * フォーカスを当てる  
 Focus "%0"
- * 入力する（Value使用）
+ * 入力する（Value使用）  
 ValueInput "%0"
- * 入力する（Copy&Paste使用）
+ * 入力する（Copy&Paste使用）  
 PasteInput "%0"
- * 入力する（SendKeys使用）
+ * 入力する（SendKeys使用）  
 KeyInput "%0"
- * クリックする
+ * クリックする  
 Click "%0"
- * 文字列をペーストする
+ * 文字列をペーストする  
 Paste "%0"
- * キー入力する
+ * キー入力する  
 SendKeys "%0"
- * スクリーンショットを撮る（画面全体）
+ * スクリーンショットを撮る（画面全体）  
 FullScreenShot "%0"
- * スクリーンショットを撮る（アクティブ画面のみ）
+ * スクリーンショットを撮る（アクティブ画面のみ）  
 ScreenShot "%0"
- * スクリーンショットを撮る（画面全体, 表示箇所のみ）
+ * スクリーンショットを撮る（画面全体, 表示箇所のみ）  
 FullScreenShot4VisibleArea "%0"
- * スクリーンショットを撮る（アクティブ画面のみ, 表示箇所のみ）
+ * スクリーンショットを撮る（アクティブ画面のみ, 表示箇所のみ）  
 ScreenShot4VisibleArea "%0"
- * SQL文を発行する
+ * SQL文を発行する  
 ExecuteSQL "%0"
- * 画面項目を検証する（検証NG時は処理中断）
+ * 画面項目を検証する（検証NG時は処理中断）  
 ValidateAttribute "%0"
- * 画面項目を検証する（検証NG時は処理続行）
+ * 画面項目を検証する（検証NG時は処理続行）  
 Record2ValidateAttribute "%0"
- * 画面タイトルを検証する（検証NG時は処理中断）
+ * 画面タイトルを検証する（検証NG時は処理中断）  
 ValidateTitle "%0"
- * 画面タイトルを検証する（検証NG時は処理続行）
+ * 画面タイトルを検証する（検証NG時は処理続行）  
 Record2ValidateTitle "%0"
- * Javascri実行する
+ * Javascriptを実行する  
 ExecuteJS "%0"
 
 ##ライセンス
  * MITライセンス
 
 ##TODO
+ * EXEのウィンドウにフォーカスする処理が不安定になっている。その為、対象外のウィンドウを誤って操作してしまう事がある。
+ * EXEの場合は一部コマンド（ex.Paste, SendKeys, FullScreenShot4VisibleArea）のみしか利用できない。
  * クリップボードが空でない時、スクリーンショットが失敗する事がある。
+ * 指定要素内のスクロールを行いながらスクリーンショットを撮る「ElementScreenShot」コマンドが欲しい。
+ * アクティブ画面のスクリーンショットを撮る「ScreenShot(ScreenShot4VisibleArea)」コマンドで不明なエラーが発生する。
 
 ##関連ページ
 Qiita - Excelスクショ問題の解決策を現役エンジニアが本気で考えた。  
