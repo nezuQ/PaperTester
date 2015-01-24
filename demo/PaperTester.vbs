@@ -12,6 +12,8 @@ Class PaperTester_EXE
   Private exe, wsh, shl, excel
   Private m_adr, m_fullScreen
   
+  '===== 固定値 =====
+  
   'プロセスID
   Public ProcessID
   
@@ -21,6 +23,8 @@ Class PaperTester_EXE
   'Windowのコントローラ
   Public Hwnd
 
+  '===== 前処理 =====
+  
   'オブジェクト作成イベント
   Private Sub Class_Initialize()
     Set wsh = CreateObject("WScript.Shell")
@@ -31,26 +35,7 @@ Class PaperTester_EXE
     m_adr = ""
   End Sub
 
-  '実行ファイルのパス
-  Public Property Get Path
-    Path = m_adr
-  End Property
-  
-  'フルスクリーン状態のON/OFF
-  Public Property Let FullScreen(doFullScreen)
-    If (m_fullScreen = doFullScreen) Then
-      If (doFullScreen) Then
-        wsh.SendKeys "% X"
-      Else
-        wsh.SendKeys "% R"
-      End If
-    End If
-    m_fullScreen = doFullScreen
-  End Property
-  
-  Public Property Get FullScreen
-    FullScreen = m_fullScreen 
-  End Property
+  '===== 共通関数 =====
   
   'HWNDからプロセスIDを取得する
   Private Function GetPIDByHWND(hwnd)
@@ -73,6 +58,29 @@ Class PaperTester_EXE
     Loop
   End Function
 
+  '===== 本処理 =====
+  
+  '実行ファイルのパス
+  Public Property Get Path
+    Path = m_adr
+  End Property
+  
+  'フルスクリーン状態のON/OFF
+  Public Property Let FullScreen(doFullScreen)
+    If (m_fullScreen = doFullScreen) Then
+      If (doFullScreen) Then
+        wsh.SendKeys "% X"
+      Else
+        wsh.SendKeys "% R"
+      End If
+    End If
+    m_fullScreen = doFullScreen
+  End Property
+  
+  Public Property Get FullScreen
+    FullScreen = m_fullScreen 
+  End Property
+  
   '起動する
   Public Sub Run(adr)
     m_adr = adr
@@ -91,20 +99,17 @@ Class PaperTester_EXE
     wsh.SendKeys("{BS}")
   End Sub
 
+  '===== 後処理 =====
+  
   '終了する
   Public Sub Quit()
     exe.Terminate
-    Set exe = Nothing
+    Terminate
   End Sub
   
   '終了処理
   Public Sub Terminate()
-    If (exe is Nothing) Then 
-      ' 処理なし
-    Else
-      Quit
-    End If
-    
+    Set exe = Nothing
     Set wsh = Nothing
     Set shl = Nothing
     Set excel = Nothing
@@ -596,6 +601,9 @@ Class PaperTester
   Public Sub Run(adrExe)
     Dim idxNextExe
     idxNextExe = ShiftExesArray(1)
+    If (0 < idxNextExe) Then
+      MinimumWindow
+    End If
     Set exe = new PaperTester_EXE
     exe.Run adrExe
     Set exes(idxNextExe) = exe
@@ -603,6 +611,11 @@ Class PaperTester
     idxExes(idxNextExe) = exe.ProcessID
     BringWindowToTop exe.Hwnd
     ActivateWindow exe.ProcessID
+    If (0 < idxNextExe) Then
+      If (GetActiveWindow() <> exe.ProcessID) Then
+        wsh.SendKeys("%({TAB})")
+      End If
+    End If
   End Sub
   
   'InternetExplorer/EXEを閉じる
