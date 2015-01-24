@@ -3,7 +3,7 @@ PaperTester
 
 ##概要
 Windows標準機能のみ(VBA未使用)に依存する為、セキュアな環境でも導入できます。
-InternetExplorer(IE)/EXEの操作内容をExcel単体テスト仕様書（PaperTester.xlsx）に記入していくと、
+InternetExplorer(IE)/EXEの操作内容をExcelテスト仕様書（PaperTester.xlsx）に記入していくと、
 ワークシート関数で自動操作用のVBScriptコードを生成します。
 生成されたコードをテンプレートコード（Execute_PaperTester.vbs）に埋め込み実行する事で、
 IE/EXE操作用ライブラリ(PaperTester.vbs)が呼び出され、IE/EXEが自動操作されます。
