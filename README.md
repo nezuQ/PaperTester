@@ -10,7 +10,7 @@ IE/EXE操作用ライブラリ(PaperTester.vbs)が呼び出され、IE/EXEが自
 又、スクリーンショットとSQL文の実行結果がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
 
 ##デモ
-[demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、_database.xlsxを開く。その後、Execute_PaperTester.vbsをダブルクリックして下さい。
+[demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、_database.xlsxを開きます。その後、Execute_PaperTester.vbsをダブルクリックして下さい。
 IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)の画面項目が自動操作されます。
 又、メモ帳が起動し、自動操作されます。
 その後、スクリーンショットやダミーデータベース（_database.xlsx）の値がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
