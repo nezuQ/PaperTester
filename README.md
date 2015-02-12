@@ -10,12 +10,13 @@ IE/EXE操作用ライブラリ(PaperTester.vbs)が呼び出され、IE/EXEが自
 又、スクリーンショットとSQL文の実行結果がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
 
 ##デモ
-[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)のポップアップを許可して下さい（※1）。
-[demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、_database.xlsxを開きます。その後、Execute_PaperTester.vbsをダブルクリックして下さい。
+[demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、Execute_PaperTester.vbsをダブルクリックして下さい。
 IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)の画面項目が自動操作されます。
 又、メモ帳が起動し、自動操作されます。
 その後、スクリーンショットやダミーデータベース（_database.xlsx）の値がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
-※1 ポップアップ許可の参考サイトは[こちら](http://windows.microsoft.com/ja-JP/windows-vista/Internet-Explorer-Pop-up-Blocker-frequently-asked-questions?SignedIn=1)。
+※注意1……[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)のポップアップを許可して下さい。
+[ポップアップ許可の参考サイト](http://windows.microsoft.com/ja-JP/windows-vista/Internet-Explorer-Pop-up-Blocker-frequently-asked-questions?SignedIn=1)。
+※注意2……64bit版OSの場合は_database.xlsxをExecute_PaperTester.vbs実行前に開いて下さい。
 
 ##依存ソフトウェア
  * Windows OS（Windows7 32bit版 推奨）
