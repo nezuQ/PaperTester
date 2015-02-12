@@ -18,7 +18,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
 ※1 参考サイトは[こちら](http://windows.microsoft.com/ja-JP/windows-vista/Internet-Explorer-Pop-up-Blocker-frequently-asked-questions?SignedIn=1)。
 
 ##依存ソフトウェア
- * Windows OS（32bit版推奨）
+ * Windows OS（Windows7 32bit版 推奨）
  * Microsoft Office
  * Internet Explorer
 
