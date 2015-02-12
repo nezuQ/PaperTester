@@ -35,7 +35,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
  3. テスト（IE/EXE自動操作）の実行方法
    1. Execute_PaperTester.vbsをダブルクリックする。
    2. IE/EXE起動時にIEが最前面に来なかった場合は、IE/EXEをクリックし、最前面に移動する。
-   3. 終了メッセージのポップアップを待つ。※Alt + F4 で処理を強制終了できる。（非推奨）
+   3. 終了メッセージのポップアップを待つ。
 
 ##操作コマンド一覧(PaperTester.vbs)
 
