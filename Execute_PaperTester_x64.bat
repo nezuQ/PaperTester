@@ -1,0 +1,1 @@
+C:\Windows\SysWOW64\wscript.exe Execute_PaperTester.vbs
