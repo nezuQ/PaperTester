@@ -16,7 +16,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
 その後、スクリーンショットやダミーデータベース（_database.xlsx）の値がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
 
 ※注意1……[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)のポップアップを許可して下さい。
-[ポップアップ許可の参考サイト](http://windows.microsoft.com/ja-JP/windows-vista/Internet-Explorer-Pop-up-Blocker-frequently-asked-questions?SignedIn=1)。
+[→ポップアップ許可の参考サイト](http://windows.microsoft.com/ja-JP/windows-vista/Internet-Explorer-Pop-up-Blocker-frequently-asked-questions?SignedIn=1)。
 
 ※注意2……64bit版OSの場合は_database.xlsxをExecute_PaperTester.vbs実行前に開いて下さい。
 
