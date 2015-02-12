@@ -10,13 +10,15 @@ IE/EXE操作用ライブラリ(PaperTester.vbs)が呼び出され、IE/EXEが自
 又、スクリーンショットとSQL文の実行結果がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
 
 ##デモ
+[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)のポップアップを許可して下さい（※1）。
 [demoフォルダ](https://github.com/nezuQ/PaperTester/tree/master/demo)をWindowsPCにダウンロードし、_database.xlsxを開きます。その後、Execute_PaperTester.vbsをダブルクリックして下さい。
 IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897/)の画面項目が自動操作されます。
 又、メモ帳が起動し、自動操作されます。
 その後、スクリーンショットやダミーデータベース（_database.xlsx）の値がエビデンス記録ブック（EvidenceTemplate.xlsx）に貼り付けられます。
+※1 ポップアップ許可の参考サイトは[こちら](http://windows.microsoft.com/ja-JP/windows-vista/Internet-Explorer-Pop-up-Blocker-frequently-asked-questions?SignedIn=1)。
 
 ##依存ソフトウェア
- * Windows OS（32bit版推奨）
+ * Windows OS（Windows7 32bit版 推奨）
  * Microsoft Office
  * Internet Explorer
 
@@ -33,7 +35,7 @@ IEが起動し、[デモ用のWebページ](http://bl.ocks.org/nezuQ/raw/9719897
  3. テスト（IE/EXE自動操作）の実行方法
    1. Execute_PaperTester.vbsをダブルクリックする。
    2. IE/EXE起動時にIEが最前面に来なかった場合は、IE/EXEをクリックし、最前面に移動する。
-   3. 終了メッセージのポップアップを待つ。※Alt + F4 で処理を強制終了できる。（非推奨）
+   3. 終了メッセージのポップアップを待つ。
 
 ##操作コマンド一覧(PaperTester.vbs)
 
